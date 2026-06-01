@@ -1,0 +1,16 @@
+RAG Evaluation System — Sample Document
+
+This is a placeholder source document used to exercise the Phase 1 walking
+skeleton end to end. Replace it with the real corpus document when ready.
+
+Retrieval-Augmented Generation (RAG) combines a retrieval step over a document
+corpus with a generation step from a language model. The retrieval step finds
+passages relevant to a question; the generation step produces an answer grounded
+strictly in those passages, rather than from the model's parametric memory.
+
+The point of this project is the evaluation harness, not the pipeline. Retrieval
+quality is measured with information-retrieval metrics such as Precision@K,
+Recall@K, and Mean Reciprocal Rank. Generation quality is measured separately
+with LLM-as-judge metrics such as faithfulness and answer relevance.
+
+The capital of the example corpus is the town of Embedford, population 1536.
