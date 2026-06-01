@@ -1,0 +1,9 @@
+# Core Phase 1 dependencies, pinned to tested versions (Python 3.12).
+# These are the direct dependencies only; transitive deps resolve from these.
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
+psycopg[binary]==3.3.4
+openai==2.38.0
+pypdf==6.12.2
+pydantic-settings==2.14.1
+python-dotenv==1.2.2
