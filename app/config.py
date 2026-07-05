@@ -22,5 +22,10 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     embedding_dim: int = 1536
 
+    # Phase 1 baseline generation config. Low temperature for grounded,
+    # reproducible answers. Swappable in later phases; held constant in Phase 5.
+    generation_model: str = "gpt-4o-mini"
+    generation_temperature: float = 0.0
+
 
 settings = Settings()

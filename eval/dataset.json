@@ -1,0 +1,168 @@
+[
+  {
+    "id": "q01",
+    "question": "According to the article, where and in what period was Cannabis sativa first domesticated?",
+    "answerable": true,
+    "ground_truth_answer": "It was first domesticated in East Asia, in early Neolithic times.",
+    "gold_spans": [
+      "Cannabis sativa was first domesticated in early Neolithic times in East Asia"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "factual",
+    "notes": "Section 2.1 / Introduction."
+  },
+  {
+    "id": "q02",
+    "question": "What is the earliest known archaeological evidence of cannabis use, and where was it found?",
+    "answerable": true,
+    "ground_truth_answer": "It dates back to around 10,000 BCE in Japan, followed by findings in China.",
+    "gold_spans": [
+      "The earliest known archaeological evidence of cannabis use dates back to\naround 10 000 BCE in Japan, followed by findings in China"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "factual",
+    "notes": "Section 2.1. Note the source writes '10 000 BCE' with a space."
+  },
+  {
+    "id": "q03",
+    "question": "How old is the cannabis pollen identified in northwestern China by fossil pollen studies?",
+    "answerable": true,
+    "ground_truth_answer": "About 19.6 million years old.",
+    "gold_spans": [
+      "cannabis pollen in northwestern China dating back to 19.6 million years ago"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "factual",
+    "notes": "Section 2.1."
+  },
+  {
+    "id": "q04",
+    "question": "How many accessions were used in the whole-genome resequencing study of cannabis domestication?",
+    "answerable": true,
+    "ground_truth_answer": "110 accessions from worldwide origins.",
+    "gold_spans": [
+      "Whole-genome\nresequencing of 110 accessions from worldwide origins"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "factual",
+    "notes": "Section 2.1 (Ren et al., 2021)."
+  },
+  {
+    "id": "q05",
+    "question": "According to McPartland, which location ought to be the origin center of hemp?",
+    "answerable": true,
+    "ground_truth_answer": "The northeastern Tibetan Plateau near Qinghai Lake.",
+    "gold_spans": [
+      "the northeastern Tibetan Plateau near Qinghai Lake ought to be\nthe origin center of hemp"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "factual",
+    "notes": "Section 2.2."
+  },
+  {
+    "id": "q06",
+    "question": "What modern genome editing technique does the article mention for precisely modifying cannabinoid biosynthesis genes?",
+    "answerable": true,
+    "ground_truth_answer": "CRISPR/Cas9.",
+    "gold_spans": [
+      "Modern\ngenome editing techniques, such as CRISPR/Cas9, offer a promising solution by allowing precise modifications to\ntarget genes responsible for cannabinoid biosynthesis"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "factual",
+    "notes": "Section 6.1."
+  },
+  {
+    "id": "q07",
+    "question": "When did Canada legalize recreational cannabis?",
+    "answerable": true,
+    "ground_truth_answer": "In October 2018.",
+    "gold_spans": [
+      "Canada legalized\nrecreational cannabis in October 2018"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "factual",
+    "notes": "Section 8.1."
+  },
+  {
+    "id": "q08",
+    "question": "Which country was the first to fully legalize cannabis?",
+    "answerable": true,
+    "ground_truth_answer": "Uruguay.",
+    "gold_spans": [
+      "Uruguay was the first country to fully legalize cannabis"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "factual",
+    "notes": "Section 8.1."
+  },
+  {
+    "id": "q09",
+    "question": "What are the three broadly recognized species of Cannabis?",
+    "answerable": true,
+    "ground_truth_answer": "Cannabis sativa, Cannabis indica, and Cannabis ruderalis.",
+    "gold_spans": [
+      "The genus includes three broadly recognized species: Cannabis sativa, Cannabis indica, and Cannabis ruderalis"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "factual",
+    "notes": "Section 1 Introduction."
+  },
+  {
+    "id": "q10",
+    "question": "Where does the 'Indica' variety of Cannabis sativa originate, according to the case study?",
+    "answerable": true,
+    "ground_truth_answer": "In Central Asia, specifically regions such as Afghanistan, Pakistan, and Turkestan.",
+    "gold_spans": [
+      "which has its origins in Central Asia, specifically in\nregions such as Afghanistan, Pakistan, and Turkestan"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "factual",
+    "notes": "Section 7.1. Span deliberately avoids the curly-quoted word to keep matching simple."
+  },
+  {
+    "id": "q11",
+    "question": "What genetic technique has been central to improving Indica strains, and name one trait it enhanced?",
+    "answerable": true,
+    "ground_truth_answer": "Polyploidization (inducing polyploidy); it produced traits such as larger fan leaves, increased trichome density, and increased CBD content.",
+    "gold_spans": [
+      "particularly through the process of\npolyploidization",
+      "the development of tetraploid Indica lines has resulted in larger\nfan leaves, increased trichome density"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "multi-hop",
+    "notes": "Section 7.2. Requires combining the technique with one of its resulting traits."
+  },
+  {
+    "id": "q12",
+    "question": "What role did the Hexi Corridor play in the spread of cannabis, and which larger trade network was it part of?",
+    "answerable": true,
+    "ground_truth_answer": "It served as a hub/conduit for the movement of cannabis (and other domesticated plants and animals) between regions, and it was part of the Silk Road.",
+    "gold_spans": [
+      "The Hexi Corridor region played a significant role as a hub for the spread of domesticated plants, animals, and\ncultural elements, including cannabis",
+      "The Silk Road, a network of trade routes\nconnecting the East and West, played a crucial role in the dissemination of cannabis"
+    ],
+    "source": "data/mota-origenes.pdf",
+    "category": "multi-hop",
+    "notes": "Section 5.1 + 5.2. Requires linking the Hexi Corridor to the Silk Road."
+  },
+  {
+    "id": "u01",
+    "question": "What is the average annual revenue generated by the legal cannabis industry in the United States?",
+    "answerable": false,
+    "ground_truth_answer": "I don't know based on the provided context.",
+    "gold_spans": [],
+    "source": "data/mota-origenes.pdf",
+    "category": "unanswerable",
+    "notes": "On-topic (US legalization/economics are discussed) but no revenue figure appears. Tests refusal."
+  },
+  {
+    "id": "u02",
+    "question": "What is the boiling point of THC (tetrahydrocannabinol)?",
+    "answerable": false,
+    "ground_truth_answer": "I don't know based on the provided context.",
+    "gold_spans": [],
+    "source": "data/mota-origenes.pdf",
+    "category": "unanswerable",
+    "notes": "THC is mentioned throughout, but no physical/chemical property like boiling point is given. Tests refusal on a plausible entity."
+  }
+]

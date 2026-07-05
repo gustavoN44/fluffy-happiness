@@ -126,13 +126,19 @@ def _add_overlap(base: list[str]) -> list[str]:
     """Prepend each base chunk with the trailing OVERLAP tokens of its
     predecessor. Done as one global pass over the finished, ordered chunk list so
     every boundary gets overlap regardless of how the recursion segmented the
-    text. base[i] <= _STRIDE and the seed <= OVERLAP, so finals stay <= CHUNK_SIZE."""
+    text. base[i] <= _STRIDE and the seed <= OVERLAP, so finals stay <= CHUNK_SIZE.
+
+    The seed and curr are both already .strip()-ed, so the whitespace that
+    separated them in the source is gone; join with a single space to avoid
+    colliding the last word of the seed with the first word of curr (e.g.
+    "in" + "early" -> "inearly"). Original separators are whitespace, so one
+    space faithfully reconstructs the boundary after whitespace-normalization."""
     if not base:
         return []
     result = [base[0]]
     for prev, curr in zip(base, base[1:]):
         seed = _tail_tokens(prev, OVERLAP)
-        result.append((seed + curr).strip())
+        result.append((seed + " " + curr).strip())
     return result
 
 

@@ -1,0 +1,784 @@
+{
+  "run": {
+    "timestamp": "2026-07-04T18:21:47",
+    "type": "retrieval"
+  },
+  "config": {
+    "dataset": "eval/dataset.json",
+    "embedding_model": "text-embedding-3-small",
+    "chunk_size": 512,
+    "overlap": 77,
+    "k_values": [
+      1,
+      3,
+      5
+    ],
+    "mrr_depth": 5,
+    "corpus_chunks": 34,
+    "excluded_unanswerable": [
+      "u01",
+      "u02"
+    ],
+    "zero_relevant_queries": []
+  },
+  "aggregate": {
+    "num_queries": 12,
+    "precision_at_k": {
+      "1": 0.9167,
+      "3": 0.3889,
+      "5": 0.25
+    },
+    "recall_at_k": {
+      "1": 0.7361,
+      "3": 0.8472,
+      "5": 0.875
+    },
+    "mrr": 0.9167
+  },
+  "per_query": [
+    {
+      "id": "q01",
+      "question": "According to the article, where and in what period was Cannabis sativa first domesticated?",
+      "category": "factual",
+      "num_relevant": 1,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          4
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 4,
+          "rank": 1,
+          "similarity": 0.6462,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 3,
+          "rank": 2,
+          "similarity": 0.6264,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 7,
+          "rank": 3,
+          "similarity": 0.6202,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 1,
+          "rank": 4,
+          "similarity": 0.6199,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 29,
+          "rank": 5,
+          "similarity": 0.599,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.3333333333333333,
+        "5": 0.2
+      },
+      "recall_at_k": {
+        "1": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0
+    },
+    {
+      "id": "q02",
+      "question": "What is the earliest known archaeological evidence of cannabis use, and where was it found?",
+      "category": "factual",
+      "num_relevant": 1,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          3
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 3,
+          "rank": 1,
+          "similarity": 0.6433,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 28,
+          "rank": 2,
+          "similarity": 0.6272,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 4,
+          "rank": 3,
+          "similarity": 0.6239,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 29,
+          "rank": 4,
+          "similarity": 0.6205,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 7,
+          "rank": 5,
+          "similarity": 0.6116,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.3333333333333333,
+        "5": 0.2
+      },
+      "recall_at_k": {
+        "1": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0
+    },
+    {
+      "id": "q03",
+      "question": "How old is the cannabis pollen identified in northwestern China by fossil pollen studies?",
+      "category": "factual",
+      "num_relevant": 2,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          3
+        ],
+        [
+          "data/mota-origenes.pdf",
+          4
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 4,
+          "rank": 1,
+          "similarity": 0.6008,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 6,
+          "rank": 2,
+          "similarity": 0.5752,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 29,
+          "rank": 3,
+          "similarity": 0.5302,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 7,
+          "rank": 4,
+          "similarity": 0.5235,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 30,
+          "rank": 5,
+          "similarity": 0.4979,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.3333333333333333,
+        "5": 0.2
+      },
+      "recall_at_k": {
+        "1": 0.5,
+        "3": 0.5,
+        "5": 0.5
+      },
+      "reciprocal_rank": 1.0
+    },
+    {
+      "id": "q04",
+      "question": "How many accessions were used in the whole-genome resequencing study of cannabis domestication?",
+      "category": "factual",
+      "num_relevant": 2,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          3
+        ],
+        [
+          "data/mota-origenes.pdf",
+          4
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 33,
+          "rank": 1,
+          "similarity": 0.5907,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 6,
+          "rank": 2,
+          "similarity": 0.5782,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 31,
+          "rank": 3,
+          "similarity": 0.5605,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 1,
+          "rank": 4,
+          "similarity": 0.5504,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 8,
+          "rank": 5,
+          "similarity": 0.536,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "recall_at_k": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0
+    },
+    {
+      "id": "q05",
+      "question": "According to McPartland, which location ought to be the origin center of hemp?",
+      "category": "factual",
+      "num_relevant": 1,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          4
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 4,
+          "rank": 1,
+          "similarity": 0.6258,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 6,
+          "rank": 2,
+          "similarity": 0.5183,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 29,
+          "rank": 3,
+          "similarity": 0.5128,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 7,
+          "rank": 4,
+          "similarity": 0.512,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 14,
+          "rank": 5,
+          "similarity": 0.4986,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.3333333333333333,
+        "5": 0.2
+      },
+      "recall_at_k": {
+        "1": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0
+    },
+    {
+      "id": "q06",
+      "question": "What modern genome editing technique does the article mention for precisely modifying cannabinoid biosynthesis genes?",
+      "category": "factual",
+      "num_relevant": 1,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          15
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 15,
+          "rank": 1,
+          "similarity": 0.5726,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 33,
+          "rank": 2,
+          "similarity": 0.5475,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 25,
+          "rank": 3,
+          "similarity": 0.5337,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 30,
+          "rank": 4,
+          "similarity": 0.5062,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 8,
+          "rank": 5,
+          "similarity": 0.4938,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.3333333333333333,
+        "5": 0.2
+      },
+      "recall_at_k": {
+        "1": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0
+    },
+    {
+      "id": "q07",
+      "question": "When did Canada legalize recreational cannabis?",
+      "category": "factual",
+      "num_relevant": 1,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          20
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 20,
+          "rank": 1,
+          "similarity": 0.4857,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 11,
+          "rank": 2,
+          "similarity": 0.4374,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 21,
+          "rank": 3,
+          "similarity": 0.4284,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 27,
+          "rank": 4,
+          "similarity": 0.4082,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 2,
+          "rank": 5,
+          "similarity": 0.4036,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.3333333333333333,
+        "5": 0.2
+      },
+      "recall_at_k": {
+        "1": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0
+    },
+    {
+      "id": "q08",
+      "question": "Which country was the first to fully legalize cannabis?",
+      "category": "factual",
+      "num_relevant": 1,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          20
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 20,
+          "rank": 1,
+          "similarity": 0.5349,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 2,
+          "rank": 2,
+          "similarity": 0.5297,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 11,
+          "rank": 3,
+          "similarity": 0.5238,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 3,
+          "rank": 4,
+          "similarity": 0.4987,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 12,
+          "rank": 5,
+          "similarity": 0.4931,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.3333333333333333,
+        "5": 0.2
+      },
+      "recall_at_k": {
+        "1": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0
+    },
+    {
+      "id": "q09",
+      "question": "What are the three broadly recognized species of Cannabis?",
+      "category": "factual",
+      "num_relevant": 2,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          1
+        ],
+        [
+          "data/mota-origenes.pdf",
+          2
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 2,
+          "rank": 1,
+          "similarity": 0.5846,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 18,
+          "rank": 2,
+          "similarity": 0.5698,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 1,
+          "rank": 3,
+          "similarity": 0.5598,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 33,
+          "rank": 4,
+          "similarity": 0.554,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 8,
+          "rank": 5,
+          "similarity": 0.5529,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.6666666666666666,
+        "5": 0.4
+      },
+      "recall_at_k": {
+        "1": 0.5,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0
+    },
+    {
+      "id": "q10",
+      "question": "Where does the 'Indica' variety of Cannabis sativa originate, according to the case study?",
+      "category": "factual",
+      "num_relevant": 2,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          16
+        ],
+        [
+          "data/mota-origenes.pdf",
+          17
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 17,
+          "rank": 1,
+          "similarity": 0.7138,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 16,
+          "rank": 2,
+          "similarity": 0.6739,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 18,
+          "rank": 3,
+          "similarity": 0.6668,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 1,
+          "rank": 4,
+          "similarity": 0.6184,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 3,
+          "rank": 5,
+          "similarity": 0.5989,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.6666666666666666,
+        "5": 0.4
+      },
+      "recall_at_k": {
+        "1": 0.5,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0
+    },
+    {
+      "id": "q11",
+      "question": "What genetic technique has been central to improving Indica strains, and name one trait it enhanced?",
+      "category": "multi-hop",
+      "num_relevant": 1,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          19
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 19,
+          "rank": 1,
+          "similarity": 0.7173,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 16,
+          "rank": 2,
+          "similarity": 0.6845,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 15,
+          "rank": 3,
+          "similarity": 0.6388,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 18,
+          "rank": 4,
+          "similarity": 0.6155,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 17,
+          "rank": 5,
+          "similarity": 0.5343,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.3333333333333333,
+        "5": 0.2
+      },
+      "recall_at_k": {
+        "1": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0
+    },
+    {
+      "id": "q12",
+      "question": "What role did the Hexi Corridor play in the spread of cannabis, and which larger trade network was it part of?",
+      "category": "multi-hop",
+      "num_relevant": 3,
+      "relevant_chunks": [
+        [
+          "data/mota-origenes.pdf",
+          12
+        ],
+        [
+          "data/mota-origenes.pdf",
+          13
+        ],
+        [
+          "data/mota-origenes.pdf",
+          14
+        ]
+      ],
+      "retrieved": [
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 13,
+          "rank": 1,
+          "similarity": 0.703,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 12,
+          "rank": 2,
+          "similarity": 0.6685,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 6,
+          "rank": 3,
+          "similarity": 0.6377,
+          "is_relevant": false
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 14,
+          "rank": 4,
+          "similarity": 0.6255,
+          "is_relevant": true
+        },
+        {
+          "source": "data/mota-origenes.pdf",
+          "chunk_index": 5,
+          "rank": 5,
+          "similarity": 0.5815,
+          "is_relevant": false
+        }
+      ],
+      "precision_at_k": {
+        "1": 1.0,
+        "3": 0.6666666666666666,
+        "5": 0.6
+      },
+      "recall_at_k": {
+        "1": 0.3333333333333333,
+        "3": 0.6666666666666666,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0
+    }
+  ]
+}

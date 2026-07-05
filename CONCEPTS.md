@@ -5,7 +5,8 @@ it exists. This is the "how it works" companion to [DECISIONS.md](DECISIONS.md)
 (which records *why specific choices* were made) and [ROADMAP.md](ROADMAP.md)
 (the build sequence). Sections are added as components are built.
 
-The pipeline so far: **load → chunk → embed → store** → (retrieve → generate).
+The full Phase 1 pipeline: **load → chunk → embed → store → retrieve → generate**,
+exposed over HTTP. Phase 2 adds the **evaluation** layer that scores it.
 
 ---
 
@@ -222,3 +223,160 @@ assignment context, so the same list arrives as `double precision[]` and
 similarity queries must cast the parameter (`%s::vector`) or pass a
 `pgvector.Vector`. This is why retrieval handles the query vector explicitly
 rather than relying on the insert-time magic.
+
+---
+
+## Retrieve
+
+**File:** [app/retriever.py](app/retriever.py) · **Entry:** `retrieve(query, k=5) -> list[RetrievedChunk]`
+
+**Function in the pipeline.** Given a natural-language question, return the K
+chunks most likely to answer it. This is the "use the index" entry point and the
+front half of answering: its output becomes the grounding context handed to the
+generator. Retrieval and generation are evaluated *separately* (IR metrics here,
+LLM-as-judge there), so keeping this a clean, standalone step matters beyond
+Phase 1.
+
+**How it works.**
+- **Same-space embedding.** The query is embedded with the *same* model used at
+  ingestion (`embed_text`). This is non-negotiable: cosine comparison is only
+  meaningful if query and chunks live in the same vector space. Embed the query
+  with a different model and the distances are nonsense.
+- **Nearest-neighbour search.** The query vector (wrapped as `pgvector.Vector`)
+  is compared against every stored chunk with `embedding <=> %s` (cosine
+  distance), ordered ascending, limited to K. At Phase 1 scale this is a
+  brute-force exact scan — no index — which is both fastest and exact here.
+- **K** defaults to 5 (a sane RAG default) and is an overridable argument, not
+  buried in SQL.
+- **Transparent results.** Each `RetrievedChunk` carries `content`, `source`,
+  `chunk_index`, `distance` (lower = closer), and `similarity` (`1 − distance`,
+  higher = better). The README wants passages *and* scores surfaced, so the score
+  travels with the text from the start.
+
+**Why scores are corpus-dependent (and that's the point).** On the test corpus, a
+question the document actually covers ("where was cannabis domesticated?") scores
+~0.68 similarity; a question it barely covers ("psychoactive compounds?") tops out
+~0.50 with off-topic hits. That's correct behaviour, not a bug — there's simply
+nothing closer to return, and the low score *says so*. Honest scores are exactly
+what lets the Phase 2 harness measure retrieval quality instead of assuming it.
+
+---
+
+## Generate
+
+**File:** [app/generator.py](app/generator.py) · **Entry:** `generate_answer(question, chunks)`
+
+**Function in the pipeline.** Turn the retrieved passages into a written answer.
+The model is given the question *and* the chunks, and instructed to answer from
+those chunks only — so the answer is **grounded** in the corpus rather than in the
+model's own memory. This is the back half of answering, and it's evaluated
+separately from retrieval (faithfulness / answer-relevance, not IR metrics).
+
+**How it works.**
+- The retrieved chunks are formatted into a numbered context block and sent to
+  OpenAI's chat model (`gpt-4o-mini`, Phase 1 baseline) with a **system prompt**
+  that says: use only the provided context, don't use prior knowledge, and if the
+  answer isn't in the context reply exactly *"I don't know based on the provided
+  context."*
+- **Temperature 0** for grounded, reproducible answers — we want the same context
+  to yield the same answer, not creative variation.
+- If retrieval returns nothing, it short-circuits to the "I don't know" response
+  without calling the model.
+
+**Why grounding matters.** A RAG system's job is to answer *from the documents*,
+not to sound plausible. The refusal behavior is the visible proof: asked "what is
+the capital of France?" against a cannabis-origins corpus, it correctly answers "I
+don't know based on the provided context" even though chunks were retrieved —
+because none of them contain the answer. Phase 2's faithfulness metric formalizes
+exactly this property.
+
+---
+
+## Serve (HTTP)
+
+**File:** [app/main.py](app/main.py) · **Endpoints:** `POST /query`, `GET /health`
+
+**Function in the pipeline.** Expose the whole pipeline over HTTP so it's usable
+beyond a script — the Phase 1 exit point. `POST /query` takes `{question, k}`,
+runs `retrieve → generate`, and returns the answer **plus** the source passages
+with their similarity/distance scores. Returning the sources (not just the answer)
+is the README's transparency requirement: the retrieval step is visible, not a
+black box. Built with FastAPI + Pydantic, so request/response shapes are typed and
+validated. Run with `uvicorn app.main:app --reload`.
+
+---
+
+## Evaluation — retrieval metrics (IR)
+
+**File:** [eval/retrieval_metrics.py](eval/retrieval_metrics.py) · **Run:** `python -m eval.retrieval_metrics`
+
+**Function.** Score *how good the retriever is* — independently of generation —
+against the labeled dataset ([eval/dataset.json](eval/dataset.json)). Three classic
+information-retrieval metrics: Precision@K, Recall@K, and MRR. Unanswerable
+questions have no relevant chunks and are excluded here; they are judged on the
+generation side.
+
+### From gold spans to "relevant chunks"
+
+The dataset labels answers as **verbatim text spans** in the source document
+(chunking-independent, see [DECISIONS.md](DECISIONS.md) D3). To score retrieval we
+first map spans to chunks: **a chunk is "relevant" to a question if its content
+contains any of that question's gold spans** (whitespace-normalized on both sides).
+A question's relevant set is the *union* of all such chunks.
+
+Spans and chunks are **not** 1:1. Because chunks overlap (~77 tokens repeated at
+each boundary), a span sitting near a boundary appears in **two** adjacent chunks,
+so it maps to both. Example — q12 has 2 gold spans but 3 relevant chunks: one span
+is in chunk 12, the other falls in an overlap region and appears in *both* chunks
+13 and 14. That is the overlap working as designed: the fact is genuinely findable
+from either chunk, so retrieving either counts as success.
+
+Chunk identity is `(source, chunk_index)` — stable across re-ingests, unlike the
+auto-increment DB `id`.
+
+### The three metrics
+
+For each query, hold two sets in mind: the **relevant set** (chunks containing a
+gold span) and the **retrieved set** (the top-K chunks, in ranked order).
+
+**Precision@K — "of what I returned, how much was relevant?"**
+`= (# relevant in top K) / K`. Measures signal-to-noise in the results list.
+Key subtlety: the denominator is always K, even when fewer than K relevant chunks
+exist — so a question with only 1 relevant chunk can never exceed 0.20 at P@5.
+Precision@K is therefore structurally suppressed when ground-truth relevance is
+sparse (most of our questions have 1–3 relevant chunks); a low P@5 reflects that,
+not junk retrieval.
+
+**Recall@K — "of everything relevant, how much did I find?"**
+`= (# relevant in top K) / (total # relevant)`. Measures coverage. This is the one
+that bites hardest in RAG: a relevant chunk that never makes the top-K never
+reaches the generator, so the answer *cannot* be grounded in it — no prompt tweak
+recovers un-retrieved information.
+
+Precision and recall pull in opposite directions as K grows: larger K finds more
+relevant chunks (recall up) but dilutes the list (precision down). Seeing both is
+how you reason about the right K.
+
+**MRR — "how high up was the *first* relevant result?"**
+Mean Reciprocal Rank: for each query take `1 / (rank of first relevant chunk)`,
+then average. The reciprocal makes rank hurt sharply — rank 1 = 1.0, rank 2 = 0.5,
+rank 5 = 0.2, absent = 0. Unlike Precision/Recall (which treat all K positions
+equally), MRR rewards *ordering* — putting the right chunk first, which matters
+because the top result is the most trusted and the most likely to fit a limited
+context budget.
+
+### Why all three, together
+
+Each metric is individually gameable and individually blind: precision alone
+rewards returning one safe chunk (killing recall); recall alone rewards returning
+everything (killing precision); MRR alone ignores everything after the first hit.
+Reporting all three at multiple K keeps the picture honest — a Phase 5 config
+change is only a real retrieval win if it improves these *without* quietly
+sacrificing another. And they judge retrieval **only** — whether the right passages
+were fetched and ranked, not whether the generated answer is correct or grounded
+(that is the separate job of the generation metrics).
+
+The harness reports P@K and R@K at K = 1, 3, 5 plus MRR (depth 5), saves a
+timestamped JSON to `eval/results/` for cross-run comparison, and warns if any
+answerable question maps to zero relevant chunks (which would silently distort
+recall — exactly the signal that caught the D4 chunker bug).
