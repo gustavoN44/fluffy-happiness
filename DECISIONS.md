@@ -333,3 +333,64 @@ RAGAS imports and runs end-to-end on our stack (`openai` 2.38.0 retained,
 relevancy 0.862, context precision 0.893, context recall 0.917, refusal accuracy
 1.000 (2/2). RAGAS context_recall (0.917) tracks the independent span-based
 Recall@5 (0.875), cross-validating the retrieval signal.
+
+---
+
+## D6 — Phase 3 architecture: Protocol interfaces, table-per-config storage, Voyage
+
+- **Date:** 2026-07-08
+- **Status:** Accepted; implementation spans Phase 3 (Steps 1–5).
+- **ROADMAP reference:** Phase 3 — Swappable interfaces → "Refactor chunking and embedding so strategy and model are selected by configuration... Define a common interface for each" ([ROADMAP.md](ROADMAP.md) lines 30–34). Enables Phase 5's 3×2 matrix ([ROADMAP.md](ROADMAP.md) lines 60–67).
+- **Type:** Decision (architecture; roadmap mandates swappability but not the mechanism).
+- **Implemented in (planned):** `app/interfaces.py` (Protocols), `app/pipeline.py` (RunConfig + registry + factory), refactored `app/chunker.py` / `app/embedder.py`; Step 2 makes `app/store.py` / `app/retriever.py` / the eval harness config-aware.
+
+**Context**
+Phase 5 needs to sweep chunking {Recursive-512, Recursive-256, Semantic} × embedding
+{text-embedding-3-small, a contender} = 6 cells by config alone. Three design
+questions had to be settled first: how components are abstracted, how vectors of
+differing dimensionality/chunking are stored, and which second embedder to add.
+
+**Decision**
+1. **Interfaces via `typing.Protocol` + a registry + a factory.** `Chunker` and
+   `Embedder` are structural Protocols; a registry maps config names to classes; a
+   `RunConfig` builds the pipeline's components. Recursive-512 vs -256 are just
+   constructor params, not separate strategies.
+2. **Table-per-config storage.** Each config gets its own table `chunks_<config_id>`
+   (config_id = stable hash of chunking+embedding params) with its own
+   `vector(dim)`. All cells coexist; no re-ingest between evaluations.
+3. **Second embedder: Voyage `voyage-3-large`** (~1024-dim), retrieval-tuned for
+   technical/scientific text like the corpus. Needs a `VOYAGE_API_KEY` + `voyageai`
+   client.
+
+**Why**
+1. *Protocol + registry:* structural typing keeps implementations decoupled (no
+   inheritance), the registry turns "add a strategy" into "add one entry," and the
+   factory is what lets Phase 5 iterate configs with zero pipeline edits — the exit
+   criterion.
+2. *Table-per-config (chosen over sequential single-store):* different embedders
+   emit different dims (3-small 1536, Voyage 1024), so a single fixed
+   `vector(1536)` column can't hold them; and different chunkings produce different
+   rows. Per-config tables let all six cells live simultaneously, so the matrix
+   doesn't re-ingest between evals. Cost: more schema/state machinery, and the read
+   path (retriever, eval) must target a config's table and embed queries with that
+   config's embedder.
+3. *Voyage:* the roadmap's suggested quality contender for technical corpora; a true
+   cross-provider comparison (vs a same-provider size bump like 3-large).
+
+**Tradeoffs**
+- **More DB state.** N coexisting tables to create/track; needs a clear naming +
+  lifecycle scheme and a way to list/drop configs.
+- **Query-embedder coupling.** Retrieval MUST embed the query with the same embedder
+  that populated the table — a mismatch yields meaningless distances. The config has
+  to thread through the whole read path (retriever, eval harness, and the API's
+  notion of an "active" config).
+- **Third-party dependency + key.** Voyage adds an external provider, API key, and
+  client library; a cell can't run without the key.
+- **Schema no longer purely in db/init.** Tables are created per-config at ingest
+  time (dim known only from config), so schema creation moves partly into app code.
+
+**Verification (per step)**
+Step 1 (this commit): interfaces + factory added with **no behavior change** — the
+baseline config reproduces identical chunks/dims and identical (deterministic) IR
+scores. Later steps verify table-per-config isolation, the semantic chunker, the
+Voyage embedder, and finally a full non-baseline config run by config change alone.
