@@ -272,3 +272,64 @@ and working around it in the metric.
 After the fix: 0/34 chunks seam-corrupted (all are clean normalized substrings of
 the source), 0 chunks over the 512-token budget, q01 maps to a relevant chunk at
 rank 1, and the retrieval-metrics zero-relevant warning cleared.
+
+---
+
+## D5 — Generation eval: RAGAS in an isolated venv, pinned to LangChain 0.3.x
+
+- **Date:** 2026-07-04
+- **Status:** Accepted.
+- **ROADMAP reference:** Phase 2 — Evaluation harness → "wire up RAGAS/DeepEval for the four core metrics (faithfulness, answer relevance, context precision, context recall)" ([ROADMAP.md](ROADMAP.md) line 26). Related: Phase 6 (containerize services, [ROADMAP.md](ROADMAP.md) line 50) — a key reason to isolate.
+- **Type:** Decision (framework + environment) with a forced version pin (deviation from "just install the latest").
+- **Implemented in:** [requirements-eval.txt](requirements-eval.txt) (separate `.venv-eval`), [eval/generation_metrics.py](eval/generation_metrics.py).
+
+**Context**
+Phase 2 needs LLM-as-judge metrics. RAGAS was chosen as the framework (canonical
+RAG-eval library, names these four metrics 1:1). Two problems surfaced on install:
+(1) RAGAS pulls ~60 transitive packages — the entire LangChain + LangGraph stack,
+pandas, pyarrow, scipy, huggingface_hub — and would downgrade `jiter`/`websockets`
+in the app venv; (2) RAGAS 0.4.3 declares **unpinned** langchain deps, so pip
+grabbed LangChain 1.x, whose `langchain_community` removed a module RAGAS 0.4.3
+imports at load time (`chat_models.vertexai`) — RAGAS failed to import at all.
+
+**Decision**
+1. **Isolate RAGAS in a separate virtualenv** (`.venv-eval`, from
+   `requirements-eval.txt = -r requirements.txt + ragas + pinned langchain`). The
+   app's `.venv` and its tested runtime are untouched.
+2. **Pin the LangChain 0.3.x line** RAGAS 0.4.3 actually works against
+   (`langchain==0.3.30`, `langchain-core==0.3.86`, `langchain-community==0.3.31`,
+   `langchain-openai==0.3.35`, `langchain-text-splitters==0.3.11`), which keeps
+   `openai` at 2.x (no SDK downgrade). Removed orphaned langgraph/langchain-classic
+   packages left by the initial 1.x resolution; `pip check` is clean.
+3. **Judge model: gpt-4o-mini, temperature 0** (D2 logic — cheap, repeatable).
+4. **Unanswerable questions scored by a separate refusal-accuracy check**, not
+   RAGAS (faithfulness/relevancy are ill-defined for an "I don't know" response).
+
+**Why**
+- *Isolation:* eval is a dev/CI-time concern never touched by `/query`. Keeping its
+  heavy, conflict-prone stack out of the app venv preserves the app's lean, tested
+  runtime and — critically for Phase 6 — keeps the API container image small
+  (no LangChain/pandas/pyarrow shipped to production). The eval venv is a *superset*
+  of the app venv (app deps + RAGAS), so eval code can still `import app.*`.
+- *Version pin:* RAGAS's loose deps are a reproducibility hazard — a fresh install
+  silently grabs an incompatible LangChain and breaks. Pinning the known-good set
+  makes `requirements-eval.txt` reproducible.
+
+**Tradeoffs**
+- **Two environments to maintain** (`.venv`, `.venv-eval`) and two requirements
+  files. Documented; the eval venv is only needed to run the eval harness.
+- **Pinned to older LangChain.** RAGAS 0.4.3 lags the current LangChain 1.x; we're
+  frozen on 0.3.x until RAGAS supports 1.x. Acceptable — eval is offline and the
+  pins are explicit.
+- **RAGAS deprecation warnings.** 0.4.3 warns that metric imports move to
+  `ragas.metrics.collections` in v1.0; suppressed for now, revisit on upgrade.
+- **answer_relevancy is noisy for terse text** (RAGAS generates questions from the
+  answer; short answers score erratically) and gpt-4o-mini sometimes ignores its
+  n-generations request. Interpret that metric with more caution than the others.
+
+**Verification**
+RAGAS imports and runs end-to-end on our stack (`openai` 2.38.0 retained,
+`pip check` clean). Baseline on the 14-item set: faithfulness 0.833, answer
+relevancy 0.862, context precision 0.893, context recall 0.917, refusal accuracy
+1.000 (2/2). RAGAS context_recall (0.917) tracks the independent span-based
+Recall@5 (0.875), cross-validating the retrieval signal.

@@ -1,0 +1,21 @@
+# Evaluation-only dependencies, installed into a SEPARATE virtualenv (.venv-eval)
+# so RAGAS's heavyweight LangChain/pandas/pyarrow stack never touches the app's
+# runtime venv or the Phase 6 API container. Eval is a dev-time concern only.
+#
+# Includes the app's runtime deps (via -r) so eval scripts can import app.* — the
+# eval venv is a superset of the app venv plus RAGAS.
+#
+#   python3 -m venv .venv-eval
+#   .venv-eval/bin/python -m pip install -r requirements-eval.txt
+#   .venv-eval/bin/python -m eval.generation_metrics
+-r requirements.txt
+
+ragas==0.4.3
+# RAGAS 0.4.3 has UNPINNED langchain deps and its code imports a module removed in
+# LangChain 1.x, so pip otherwise grabs an incompatible 1.x. Pin the 0.3.x line
+# that RAGAS 0.4.3 actually works against. (These keep openai at 2.x — no downgrade.)
+langchain==0.3.30
+langchain-core==0.3.86
+langchain-community==0.3.31
+langchain-openai==0.3.35
+langchain-text-splitters==0.3.11

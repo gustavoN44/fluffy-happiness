@@ -1,0 +1,180 @@
+{
+  "run": {
+    "timestamp": "2026-07-04T19:48:38",
+    "type": "generation"
+  },
+  "config": {
+    "dataset": "eval/dataset.json",
+    "judge_model": "gpt-4o-mini",
+    "generation_model": "gpt-4o-mini",
+    "embedding_model": "text-embedding-3-small",
+    "k": 5,
+    "num_answerable": 12,
+    "num_unanswerable": 2
+  },
+  "aggregate": {
+    "faithfulness": 0.8333,
+    "answer_relevancy": 0.8619,
+    "context_precision": 0.8934,
+    "context_recall": 0.9167,
+    "refusal_accuracy": 1.0
+  },
+  "per_query": [
+    {
+      "id": "q01",
+      "category": "factual",
+      "question": "According to the article, where and in what period was Cannabis sativa first domesticated?",
+      "answer": "Cannabis sativa was first domesticated in early Neolithic times in East Asia.",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9151822760666948,
+        "context_precision": 0.999999999975,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "q02",
+      "category": "factual",
+      "question": "What is the earliest known archaeological evidence of cannabis use, and where was it found?",
+      "answer": "The earliest known archaeological evidence of cannabis use dates back to around 10,000 BCE in Japan.",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9581963342701183,
+        "context_precision": 0.9999999999,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "q03",
+      "category": "factual",
+      "question": "How old is the cannabis pollen identified in northwestern China by fossil pollen studies?",
+      "answer": "The cannabis pollen identified in northwestern China is dated back to 19.6 million years ago.",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9454210231384413,
+        "context_precision": 0.9999999999,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "q04",
+      "category": "factual",
+      "question": "How many accessions were used in the whole-genome resequencing study of cannabis domestication?",
+      "answer": "I don't know based on the provided context.",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.0,
+        "context_recall": 0.0
+      }
+    },
+    {
+      "id": "q05",
+      "category": "factual",
+      "question": "According to McPartland, which location ought to be the origin center of hemp?",
+      "answer": "According to McPartland, the northeastern Tibetan Plateau near Qinghai Lake ought to be the origin center of hemp.",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9073780158995531,
+        "context_precision": 0.9999999999,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "q06",
+      "category": "factual",
+      "question": "What modern genome editing technique does the article mention for precisely modifying cannabinoid biosynthesis genes?",
+      "answer": "The article mentions the modern genome editing technique CRISPR/Cas9 for precisely modifying cannabinoid biosynthesis genes.",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9877162957361258,
+        "context_precision": 0.9999999999,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "q07",
+      "category": "factual",
+      "question": "When did Canada legalize recreational cannabis?",
+      "answer": "Canada legalized recreational cannabis in October 2018.",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9999999999999997,
+        "context_precision": 0.9999999999,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "q08",
+      "category": "factual",
+      "question": "Which country was the first to fully legalize cannabis?",
+      "answer": "Uruguay was the first country to fully legalize cannabis.",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 1.0000000000000002,
+        "context_precision": 0.9999999999,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "q09",
+      "category": "factual",
+      "question": "What are the three broadly recognized species of Cannabis?",
+      "answer": "The three broadly recognized species of Cannabis are Cannabis sativa, Cannabis indica, and Cannabis ruderalis.",
+      "scores": {
+        "faithfulness": 0.0,
+        "answer_relevancy": 1.0000000000000002,
+        "context_precision": 0.8333333332916666,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "q10",
+      "category": "factual",
+      "question": "Where does the 'Indica' variety of Cannabis sativa originate, according to the case study?",
+      "answer": "The 'Indica' variety of Cannabis sativa originates in Central Asia, specifically in regions such as Afghanistan, Pakistan, and Turkestan.",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.8716068497833426,
+        "context_precision": 0.8874999999778125,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "q11",
+      "category": "multi-hop",
+      "question": "What genetic technique has been central to improving Indica strains, and name one trait it enhanced?",
+      "answer": "The genetic technique that has been central to improving Indica strains is polyploidization. One trait it enhanced is the increase in cannabidiol (CBD) content.",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.9745956966049644,
+        "context_precision": 0.9999999999666667,
+        "context_recall": 1.0
+      }
+    },
+    {
+      "id": "q12",
+      "category": "multi-hop",
+      "question": "What role did the Hexi Corridor play in the spread of cannabis, and which larger trade network was it part of?",
+      "answer": "The Hexi Corridor played a significant role as a hub for the spread of domesticated plants, animals, and cultural elements, including cannabis, originally from Southwest Asia and Europe. It was part of the larger trade network known as the Silk Road, which connected the East and West and facilitated the exchange of cannabis between different regions.",
+      "scores": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.7829933042592282,
+        "context_precision": 0.99999999998,
+        "context_recall": 1.0
+      }
+    }
+  ],
+  "refusals": [
+    {
+      "id": "u01",
+      "answer": "I don't know based on the provided context.",
+      "correct_abstention": true
+    },
+    {
+      "id": "u02",
+      "answer": "I don't know based on the provided context.",
+      "correct_abstention": true
+    }
+  ]
+}

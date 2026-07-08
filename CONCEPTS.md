@@ -380,3 +380,70 @@ The harness reports P@K and R@K at K = 1, 3, 5 plus MRR (depth 5), saves a
 timestamped JSON to `eval/results/` for cross-run comparison, and warns if any
 answerable question maps to zero relevant chunks (which would silently distort
 recall — exactly the signal that caught the D4 chunker bug).
+
+---
+
+## Evaluation — generation metrics (LLM-as-judge)
+
+**File:** [eval/generation_metrics.py](eval/generation_metrics.py) · **Run:** `.venv-eval/bin/python -m eval.generation_metrics`
+
+**Function.** Score *how good the generated answer is*, given what was retrieved —
+the other half of the harness from the IR metrics. Where IR metrics ask "did we
+fetch the right chunks?", these ask "was the answer faithful, relevant, and did the
+context support it?". Uses **RAGAS** (see [DECISIONS.md](DECISIONS.md) D5 for why
+it lives in a separate `.venv-eval`) with an LLM as the judge (gpt-4o-mini).
+
+**LLM-as-judge, in one line:** some qualities (is this claim *supported*? does this
+answer the *question*?) can't be computed with a formula, so a language model reads
+the answer/context/question and scores them against a rubric. Powerful but noisier
+than a formula — which is why we cross-check against the deterministic IR metrics.
+
+### The four metrics
+
+Each judges a different pairing of {question, retrieved context, answer,
+ground-truth reference}. All are 0–1, higher = better.
+
+**Faithfulness — answer vs context.** Fraction of the answer's claims that are
+supported by the retrieved context. This is the **anti-hallucination** metric: a
+low score means the model asserted things the context doesn't back up. It's the
+direct measure of what our grounding prompt exists to enforce. (Note: faithfulness
+cares only that claims are *grounded in the context*, not that they're *true* — a
+faithful answer built on a wrong context still scores high. That's why retrieval is
+evaluated separately.)
+
+**Answer relevancy — answer vs question.** Does the answer actually address what
+was asked, without padding or drift? RAGAS computes it by generating several
+questions *from the answer* and measuring how close they are (in embedding space)
+to the original question. Caveat we hit in practice: it's **noisy for terse
+answers** (a bare "Uruguay." gives the generator little to reverse-engineer), so it
+swings more than the others — interpret with a grain of salt.
+
+**Context precision — context vs reference, ranking-aware.** Of the retrieved
+contexts, are the *relevant* ones ranked near the top? Judged against the reference
+answer. High = the useful context is up front, not buried under noise. Conceptually
+the LLM-judged cousin of IR Precision@K.
+
+**Context recall — context vs reference, coverage.** Can every claim in the
+ground-truth reference be attributed to the retrieved context? Low = retrieval
+missed information the correct answer needs, so the generator couldn't have produced
+it even in principle. The LLM-judged cousin of IR Recall@K.
+
+### Unanswerable questions: a separate refusal check
+
+Faithfulness and relevancy are ill-defined for an "I don't know" response, so the
+unanswerable items aren't fed to RAGAS. Instead a **refusal-accuracy** check asks:
+did the pipeline correctly abstain (produce the refusal) instead of fabricating an
+answer? This is where the grounding guard is actually scored.
+
+### Two independent lenses on retrieval — and why that matters
+
+Notice context precision/recall overlap with the IR Precision@K / Recall@K from the
+previous section — but they are computed **completely differently**: IR uses human
+gold spans and exact set overlap (deterministic); RAGAS uses LLM judgment against
+the reference answer (semantic). They are not redundant — they're a cross-check.
+When they **agree** (baseline: RAGAS context_recall 0.917 vs IR Recall@5 0.875),
+that's real confidence the retrieval signal is trustworthy. When they **diverge**,
+it's diagnostic: e.g. the gold span was retrieved (high IR recall) but phrased so
+differently the judge couldn't attribute the reference to it (low RAGAS recall), or
+vice-versa. Getting two methods to corroborate is the whole point of evaluating
+retrieval and generation as separate, independently-measured stages.
