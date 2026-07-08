@@ -1,56 +1,78 @@
-"""Embedding: turn chunk text into vectors via OpenAI text-embedding-3-small.
+"""Embedding: turn text into vectors. Phase 3 makes the model swappable.
 
-Deliberately pure: text in, vectors out, same order. It knows nothing about
-chunks, the database, or retrieval — the store step zips these vectors back onto
-chunks. Model and dimensionality come from app.config (Phase 1 baseline,
-swappable in Phase 3).
+`OpenAIEmbedder` implements the Embedder protocol, carrying its own `model` and
+`dim` so different OpenAI models (and, behind the same interface, other providers)
+can be selected by config. `embed_texts()` / `embed_text()` remain as thin
+wrappers over a default instance so existing callers are unaffected.
+
+Deliberately pure: text in, vectors out, same order. Knows nothing about chunks,
+the database, or retrieval.
 """
 
 from openai import OpenAI
 
 from app.config import settings
 
-_client = OpenAI(api_key=settings.openai_api_key)
-
 # The embeddings endpoint accepts many inputs per request; cap batch size so a
 # large document is sent in a few calls rather than one oversized request.
 _BATCH_SIZE = 100
 
 
+class OpenAIEmbedder:
+    """Embeds via the OpenAI embeddings API. Implements the Embedder protocol."""
+
+    def __init__(
+        self,
+        model: str = settings.embedding_model,
+        dim: int = settings.embedding_dim,
+        name: str = "openai",
+    ):
+        self.model = model
+        self.dim = dim
+        self.name = name
+        self._client = OpenAI(api_key=settings.openai_api_key)
+
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        """Embed a list of texts, one vector per input in input order.
+
+        Raises:
+            ValueError: a returned vector does not match this embedder's `dim`
+                (would otherwise fail at DB insert time).
+        """
+        if not texts:
+            return []
+
+        vectors: list[list[float]] = []
+        for start in range(0, len(texts), _BATCH_SIZE):
+            batch = texts[start : start + _BATCH_SIZE]
+            response = self._client.embeddings.create(model=self.model, input=batch)
+            # Sort by .index so order is guaranteed regardless of response ordering.
+            for item in sorted(response.data, key=lambda d: d.index):
+                vectors.append(item.embedding)
+
+        for i, vector in enumerate(vectors):
+            if len(vector) != self.dim:
+                raise ValueError(
+                    f"Embedding {i} has {len(vector)} dims, expected "
+                    f"{self.dim} for model {self.model}."
+                )
+
+        return vectors
+
+    def embed_text(self, text: str) -> list[float]:
+        return self.embed_texts([text])[0]
+
+
+# Default instance + compat wrappers so existing callers keep working.
+_DEFAULT_EMBEDDER = OpenAIEmbedder()
+
+
 def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Embed a list of texts, returning one vector per input in input order.
-
-    Raises:
-        ValueError: a returned vector does not match the configured
-            dimensionality (would otherwise fail at DB insert time).
-    """
-    if not texts:
-        return []
-
-    vectors: list[list[float]] = []
-    for start in range(0, len(texts), _BATCH_SIZE):
-        batch = texts[start : start + _BATCH_SIZE]
-        response = _client.embeddings.create(
-            model=settings.embedding_model,
-            input=batch,
-        )
-        # Sort by .index so order is guaranteed regardless of response ordering.
-        for item in sorted(response.data, key=lambda d: d.index):
-            vectors.append(item.embedding)
-
-    for i, vector in enumerate(vectors):
-        if len(vector) != settings.embedding_dim:
-            raise ValueError(
-                f"Embedding {i} has {len(vector)} dims, expected "
-                f"{settings.embedding_dim} for model {settings.embedding_model}."
-            )
-
-    return vectors
+    return _DEFAULT_EMBEDDER.embed_texts(texts)
 
 
 def embed_text(text: str) -> list[float]:
-    """Embed a single text (e.g. a query). Convenience wrapper over embed_texts."""
-    return embed_texts([text])[0]
+    return _DEFAULT_EMBEDDER.embed_text(text)
 
 
 if __name__ == "__main__":
