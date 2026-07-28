@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     openai_api_key: str
     database_url: str
 
+    # Optional — only needed for Voyage-embedder configs; the app runs without it
+    # for OpenAI-only configs. VoyageEmbedder raises clearly if it's missing.
+    voyage_api_key: str | None = None
+
     # Phase 1 baseline embedding config. Hardcoded here now; becomes
     # config-swappable in Phase 3. embedding_dim MUST match the model's output
     # and the chunks.embedding column (vector(1536)).

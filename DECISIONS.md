@@ -389,8 +389,11 @@ differing dimensionality/chunking are stored, and which second embedder to add.
 - **Schema no longer purely in db/init.** Tables are created per-config at ingest
   time (dim known only from config), so schema creation moves partly into app code.
 
-**Verification (per step)**
-Step 1 (this commit): interfaces + factory added with **no behavior change** — the
-baseline config reproduces identical chunks/dims and identical (deterministic) IR
-scores. Later steps verify table-per-config isolation, the semantic chunker, the
-Voyage embedder, and finally a full non-baseline config run by config change alone.
+**Verification (per step) — Phase 3 COMPLETE (2026-07-17)**
+- Step 1: interfaces + factory, **no behavior change** (baseline reproduces identical chunks/dims/IR).
+- Step 2: table-per-config storage + `configs` registry; baseline re-ingested to `chunks_33fd8fca2f`, static `chunks` dropped; IR byte-identical.
+- Step 3: `SemanticChunker` added + registered; ingested + retrieval-evaluated as its own coexisting config.
+- Step 4: `VoyageEmbedder` (voyage-3-large, 1024-dim) added + registered; live smoke test passed; no dependency conflicts in either venv.
+- Step 5 (exit criterion): `recursive512__voyage-3-large` ingested and **fully evaluated end-to-end (retrieval + generation) by config change alone**, zero pipeline edits. Three configs now coexist at different dims (1536/1536/1024). Baseline still reproduces exactly (P@1 0.917 / R@5 0.875 / MRR 0.917).
+
+**Exit criterion met:** chunking strategy and embedding model are both swappable via a `RunConfig` with no pipeline code changes. Early (non-authoritative) data point — recursive512 × voyage-3-large scored R@5 0.917 vs the baseline's 0.875; the systematic comparison is Phase 5.

@@ -9,9 +9,14 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
 from app.generator import generate_answer
+from app.pipeline import BASELINE
 from app.retriever import DEFAULT_K, retrieve
 
 app = FastAPI(title="RAG Evaluation System", version="0.1.0")
+
+# The API serves a single "active" config. Phase 3 keeps this the baseline;
+# matrix configs are eval-time targets, not served over HTTP.
+ACTIVE_CONFIG = BASELINE
 
 
 class QueryRequest(BaseModel):
@@ -39,7 +44,7 @@ def health() -> dict[str, str]:
 
 @app.post("/query", response_model=QueryResponse)
 def query(request: QueryRequest) -> QueryResponse:
-    chunks = retrieve(request.question, k=request.k)
+    chunks = retrieve(request.question, config=ACTIVE_CONFIG, k=request.k)
     answer = generate_answer(request.question, chunks)
     sources = [
         Source(

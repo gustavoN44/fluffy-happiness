@@ -17,6 +17,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from app.pipeline import BASELINE, RunConfig
 from eval import generation_metrics, retrieval_metrics
 
 RESULTS_DIR = Path("eval/results")
@@ -29,22 +30,25 @@ NOTE = (
 )
 
 
-def run() -> dict:
-    retrieval = retrieval_metrics.run()
-    generation = generation_metrics.run()
+def run(config: RunConfig = BASELINE) -> dict:
+    retrieval = retrieval_metrics.run(config)
+    generation = generation_metrics.run(config)
 
     rc, gc = retrieval["config"], generation["config"]
     return {
         "run": {"timestamp": datetime.now().isoformat(timespec="seconds"), "type": "baseline"},
         "config": {
             "dataset": rc["dataset"],
+            "config_id": config.config_id,
+            "label": config.label,
             "corpus_chunks": rc["corpus_chunks"],
-            "chunk_size": rc["chunk_size"],
-            "overlap": rc["overlap"],
-            "embedding_model": rc["embedding_model"],
+            "chunker": config.chunker,
+            "chunker_params": config.chunker_params,
+            "embedder": config.embedder,
+            "embedder_params": config.embedder_params,
             "generation_model": gc["generation_model"],
             "judge_model": gc["judge_model"],
-            "retrieval_k": gc["k"],
+            "retrieval_k": config.retrieval_k,
             "k_values": rc["k_values"],
             "mrr_depth": rc["mrr_depth"],
             "num_answerable": gc["num_answerable"],
@@ -64,14 +68,22 @@ def run() -> dict:
     }
 
 
-def _save(baseline: dict) -> tuple[Path, Path]:
+def _save(results: dict, config: RunConfig) -> tuple[Path, Path | None]:
+    """Always write a timestamped history file. Only the BASELINE config also
+    updates the canonical eval/baseline.json — other configs (matrix cells) must
+    not clobber the baseline reference."""
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    stamp = baseline["run"]["timestamp"].replace(":", "").replace("-", "")
-    run_path = RESULTS_DIR / f"baseline_{stamp}.json"
-    payload = json.dumps(baseline, indent=2)
+    stamp = results["run"]["timestamp"].replace(":", "").replace("-", "")
+    payload = json.dumps(results, indent=2)
+
+    run_path = RESULTS_DIR / f"eval_{config.config_id}_{stamp}.json"
     run_path.write_text(payload)
-    BASELINE_PATH.write_text(payload)  # canonical, committed reference
-    return run_path, BASELINE_PATH
+
+    canonical = None
+    if config.config_id == BASELINE.config_id:
+        BASELINE_PATH.write_text(payload)
+        canonical = BASELINE_PATH
+    return run_path, canonical
 
 
 def _print_summary(baseline: dict) -> None:
@@ -79,11 +91,12 @@ def _print_summary(baseline: dict) -> None:
     r = baseline["retrieval"]["aggregate"]
     g = baseline["generation"]["aggregate"]
 
+    title = "BASELINE" if cfg["config_id"] == BASELINE.config_id else "CONFIG"
     print("\n" + "=" * 58)
-    print("  PHASE 1 BASELINE")
+    print(f"  {title} — {cfg['label']} ({cfg['config_id']})")
     print("=" * 58)
-    print(f"  corpus {cfg['corpus_chunks']} chunks | chunk {cfg['chunk_size']}/{cfg['overlap']} | "
-          f"embed {cfg['embedding_model']}")
+    print(f"  corpus {cfg['corpus_chunks']} chunks | chunker {cfg['chunker']} {cfg['chunker_params']}")
+    print(f"  embedder {cfg['embedder']} {cfg['embedder_params']}")
     print(f"  gen {cfg['generation_model']} | judge {cfg['judge_model']} | k={cfg['retrieval_k']} | "
           f"{cfg['num_answerable']} answerable + {cfg['num_unanswerable']} unanswerable")
 
@@ -100,8 +113,9 @@ def _print_summary(baseline: dict) -> None:
 
 
 if __name__ == "__main__":
-    baseline = run()
-    run_path, canonical = _save(baseline)
-    _print_summary(baseline)
+    config = BASELINE
+    results = run(config)
+    run_path, canonical = _save(results, config)
+    _print_summary(results)
     print(f"\n  history : {run_path}")
-    print(f"  canonical: {canonical}")
+    print(f"  canonical: {canonical or '(not baseline — canonical unchanged)'}")

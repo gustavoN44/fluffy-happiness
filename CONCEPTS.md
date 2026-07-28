@@ -68,6 +68,50 @@ tokenizer `text-embedding-3-small` uses).
 both denominated in tokens, and the project optimizes for quality *per token*. A
 token budget means "512" is the same quantity the model and the bill see.
 
+### Two chunking strategies: recursive vs semantic
+
+Phase 3 makes the chunker swappable ([app/pipeline.py](app/pipeline.py)). Both
+implement the same `Chunker` interface (`chunk(text) -> list[Chunk]`); they differ
+in *where they decide to cut*.
+
+**Recursive (`RecursiveChunker`)** — cuts by **size**, respecting structure. It
+targets a fixed token budget (512) and, to land boundaries on natural breaks, it
+tries the coarsest separator first (paragraph → line → sentence → word →
+character), descending only when a piece won't fit. Chunks come out **uniform in
+size** (all near 512) with a fixed token overlap between neighbours. It's cheap
+(pure tokenization, no model calls), deterministic, and predictable — but it's
+blind to meaning: a single 512-token chunk can straddle two unrelated topics, and
+a coherent idea can be split across a boundary (the overlap exists to soften that).
+
+**Semantic (`SemanticChunker`)** — cuts by **meaning**, ignoring size. It splits
+the text into sentences, embeds each one, measures the cosine distance between
+consecutive sentences, and starts a new chunk wherever that distance **spikes**
+(above the 95th percentile) — i.e. where the topic shifts. Chunks come out
+**variable in size**: a long on-topic passage stays whole; a dense sequence of
+topic changes produces many small chunks. The intent is that each chunk is one
+coherent idea, which can help retrieval land the *right* passage. Costs: it makes
+embedding API calls at chunk time, it's sensitive to sentence-splitting quality
+(messy on PDFs), and it can emit tiny near-useless fragments (we saw a 3-token
+chunk) — so it's capped at a max token budget to bound the large end.
+
+**How they differ, at a glance:**
+
+| | Recursive | Semantic |
+|---|---|---|
+| Cuts on | fixed token size + natural separators | topic shift (embedding-distance spikes) |
+| Chunk sizes | uniform (~512) | variable (tiny → capped max) |
+| Overlap | yes (~77 tokens) | none (breaks are natural) |
+| Cost to chunk | free (tokenization only) | embeds every sentence (billed) |
+| Determinism | fully deterministic | deterministic given the same breakpoint model |
+| Weakness | may split/merge across topics blindly | fragments, sentence-split noise, cost |
+
+**One deliberate design choice** (DECISIONS.md D6): the semantic chunker's
+breakpoint embedder is **fixed** (text-embedding-3-small), *independent* of
+whichever embedder a config later stores its chunks with. That keeps "Semantic"
+the same chunks across the Phase 5 embedding axis — so the experiment matrix
+changes one variable at a time. Which strategy is actually *better* for this
+corpus is not asserted here; that's what the eval harness measures.
+
 ---
 
 ## Embed

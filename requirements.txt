@@ -9,3 +9,4 @@ pypdf==6.12.2
 pydantic-settings==2.14.1
 python-dotenv==1.2.2
 tiktoken==0.13.0
+voyageai==0.4.1

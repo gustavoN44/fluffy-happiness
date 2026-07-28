@@ -36,7 +36,8 @@ from ragas.metrics import (
 
 from app.config import settings
 from app.generator import generate_answer
-from app.retriever import DEFAULT_K, retrieve
+from app.pipeline import BASELINE, RunConfig
+from app.retriever import retrieve
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -61,9 +62,9 @@ def _is_refusal(answer: str) -> bool:
     return "i don't know" in answer.lower()
 
 
-def _run_pipeline(question: str) -> tuple[str, list[str]]:
-    """Run the real pipeline; return (answer, retrieved context texts)."""
-    chunks = retrieve(question, k=DEFAULT_K)
+def _run_pipeline(question: str, config: RunConfig) -> tuple[str, list[str]]:
+    """Run the real pipeline under `config`; return (answer, retrieved context texts)."""
+    chunks = retrieve(question, config=config, k=config.retrieval_k)
     answer = generate_answer(question, chunks)
     return answer, [c.content for c in chunks]
 
@@ -77,7 +78,7 @@ def _judge():
     return llm, emb
 
 
-def run() -> dict:
+def run(config: RunConfig = BASELINE) -> dict:
     dataset = _load_dataset()
     answerable = [d for d in dataset if d["answerable"]]
     unanswerable = [d for d in dataset if not d["answerable"]]
@@ -85,7 +86,7 @@ def run() -> dict:
     # --- answerable: RAGAS four metrics on the live pipeline output ---
     samples, generated = [], []
     for item in answerable:
-        answer, contexts = _run_pipeline(item["question"])
+        answer, contexts = _run_pipeline(item["question"], config)
         generated.append({"id": item["id"], "answer": answer, "contexts": contexts})
         samples.append(SingleTurnSample(
             user_input=item["question"],
@@ -122,7 +123,7 @@ def run() -> dict:
     # --- unanswerable: refusal-accuracy ---
     refusals = []
     for item in unanswerable:
-        answer, _ = _run_pipeline(item["question"])
+        answer, _ = _run_pipeline(item["question"], config)
         correct = _is_refusal(answer)
         refusals.append({"id": item["id"], "answer": answer, "correct_abstention": correct})
     refusal_accuracy = (round(sum(r["correct_abstention"] for r in refusals) / len(refusals), 4)
@@ -132,10 +133,13 @@ def run() -> dict:
         "run": {"timestamp": datetime.now().isoformat(timespec="seconds"), "type": "generation"},
         "config": {
             "dataset": str(DATASET_PATH),
+            "config_id": config.config_id,
+            "label": config.label,
             "judge_model": JUDGE_MODEL,
             "generation_model": settings.generation_model,
-            "embedding_model": settings.embedding_model,
-            "k": DEFAULT_K,
+            "embedder": config.embedder,
+            "embedder_params": config.embedder_params,
+            "k": config.retrieval_k,
             "num_answerable": len(answerable),
             "num_unanswerable": len(unanswerable),
         },

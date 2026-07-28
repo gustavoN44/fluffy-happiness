@@ -1,24 +1,20 @@
--- Phase 1 schema: a single table holding document chunks and their embeddings.
+-- Phase 3 schema: the config registry.
 --
--- Runs automatically on a fresh volume (after 01-create-extension.sql, which
--- the lexical ordering guarantees). On an already-initialized volume it must
--- be applied manually; IF NOT EXISTS makes that safe to re-run.
+-- Chunk tables are NO LONGER static. Each RunConfig gets its own table
+-- `chunks_<config_id>` with a vector(dim) matching its embedder, created by the
+-- app at ingest time (dimension is only known from the config). See app/db.py
+-- (ensure_config_table) and DECISIONS.md D6.
+--
+-- This registry records what each config_id is. Runs automatically on a fresh
+-- volume; app/db.ensure_registry() creates it idempotently on an existing one.
 
-CREATE TABLE IF NOT EXISTS chunks (
-    id        BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    content   TEXT         NOT NULL,
-
-    -- Dimensionality MUST equal the embedding model's output. OpenAI
-    -- text-embedding-3-small emits exactly 1536 dimensions; a mismatch makes
-    -- every insert fail. Changing embedding models later means changing this.
-    embedding vector(1536) NOT NULL,
-
-    -- Unused in Phase 1, added now to avoid a later migration. Will hold
-    -- document source, chunk index, and (Phase 4) RBAC ownership fields.
-    metadata  JSONB        NOT NULL DEFAULT '{}'::jsonb
+CREATE TABLE IF NOT EXISTS configs (
+    config_id       TEXT PRIMARY KEY,
+    label           TEXT NOT NULL,
+    chunker         TEXT NOT NULL,
+    chunker_params  JSONB NOT NULL,
+    embedder        TEXT NOT NULL,
+    embedder_params JSONB NOT NULL,
+    dim             INT NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-
--- Intentionally NO vector index (HNSW/IVFFlat) yet. With one document and a
--- handful of chunks, a brute-force exact scan is faster and simpler than an
--- approximate index, and avoids tuning we don't need. Add one when the corpus
--- grows enough that scan latency actually shows up in the eval metrics.

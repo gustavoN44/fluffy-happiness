@@ -15,13 +15,17 @@ from dataclasses import dataclass, field
 from app.chunker import RecursiveChunker
 from app.embedder import OpenAIEmbedder
 from app.interfaces import Chunker, Embedder
+from app.semantic_chunker import SemanticChunker
+from app.voyage_embedder import VoyageEmbedder
 
 # name -> implementation. Adding a strategy/model is a one-line registry entry.
 CHUNKER_REGISTRY: dict[str, type] = {
     "recursive": RecursiveChunker,
+    "semantic": SemanticChunker,
 }
 EMBEDDER_REGISTRY: dict[str, type] = {
     "openai": OpenAIEmbedder,
+    "voyage": VoyageEmbedder,
 }
 
 

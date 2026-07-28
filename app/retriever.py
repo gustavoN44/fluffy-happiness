@@ -1,17 +1,18 @@
 """Retrieve: given a question, return the top-K most relevant chunks.
 
-The "use the index" entry point. The query is embedded with the *same* model used
-at ingestion (so the vectors live in the same space and are comparable), then the
-chunks table is ranked by cosine distance. Results carry their source, position,
-and a relevance score so retrieval is transparent rather than a black box.
+Config-aware (Phase 3): retrieval embeds the query with the *same* embedder that
+populated the config's table and searches `chunks_<config_id>`. Using a different
+embedder than the one that built the table would make the cosine distances
+meaningless, so the embedder is taken from the config, not assumed.
 """
 
 from dataclasses import dataclass
 
 from pgvector import Vector
+from psycopg import sql
 
-from app.db import connect
-from app.embedder import embed_text
+from app.db import config_table, connect
+from app.pipeline import BASELINE, RunConfig
 
 DEFAULT_K = 5
 
@@ -25,34 +26,32 @@ class RetrievedChunk:
     similarity: float  # 1 - distance: higher = more relevant (human-friendly)
 
 
-def retrieve(query: str, k: int = DEFAULT_K) -> list[RetrievedChunk]:
-    """Embed `query` and return the k nearest chunks by cosine distance."""
-    # Wrap as pgvector.Vector so psycopg sends a true `vector` (the <=> operator
-    # has no overload for a plain float array — see DECISIONS/CONCEPTS notes).
-    query_vector = Vector(embed_text(query))
+def retrieve(query: str, config: RunConfig = BASELINE, k: int | None = None) -> list[RetrievedChunk]:
+    """Embed `query` with the config's embedder and return the k nearest chunks
+    from the config's table by cosine distance."""
+    k = k if k is not None else config.retrieval_k
+    query_vector = Vector(config.build_embedder().embed_text(query))
+    tbl = config_table(config.config_id)
 
     with connect() as conn, conn.cursor() as cur:
         cur.execute(
-            """
-            SELECT content,
-                   metadata->>'source'              AS source,
-                   (metadata->>'chunk_index')::int  AS chunk_index,
-                   embedding <=> %s                  AS distance
-            FROM chunks
-            ORDER BY distance ASC
-            LIMIT %s
-            """,
+            sql.SQL(
+                "SELECT content,"
+                "       metadata->>'source'             AS source,"
+                "       (metadata->>'chunk_index')::int AS chunk_index,"
+                "       embedding <=> %s                AS distance "
+                "FROM {tbl} "
+                "ORDER BY distance ASC "
+                "LIMIT %s"
+            ).format(tbl=tbl),
             (query_vector, k),
         )
         rows = cur.fetchall()
 
     return [
         RetrievedChunk(
-            content=content,
-            source=source,
-            chunk_index=chunk_index,
-            distance=distance,
-            similarity=1.0 - distance,
+            content=content, source=source, chunk_index=chunk_index,
+            distance=distance, similarity=1.0 - distance,
         )
         for content, source, chunk_index, distance in rows
     ]
@@ -63,7 +62,7 @@ if __name__ == "__main__":
 
     query = " ".join(sys.argv[1:]) or "Where was cannabis first domesticated?"
     results = retrieve(query)
-    print(f"query: {query!r}\ntop-{len(results)}:")
+    print(f"query: {query!r}  (config: {BASELINE.label})\ntop-{len(results)}:")
     for r in results:
         print(
             f"  [{r.source}#{r.chunk_index}] sim={r.similarity:.3f} "

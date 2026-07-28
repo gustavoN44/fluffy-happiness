@@ -14,9 +14,10 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from app.chunker import CHUNK_SIZE, OVERLAP
-from app.config import settings
-from app.db import connect
+from psycopg import sql
+
+from app.db import config_table, connect
+from app.pipeline import BASELINE, RunConfig
 from app.retriever import retrieve
 
 DATASET_PATH = Path("eval/dataset.json")
@@ -34,12 +35,13 @@ def _load_dataset() -> list[dict]:
     return json.loads(DATASET_PATH.read_text())
 
 
-def _load_corpus_chunks() -> list[tuple[str, int, str]]:
-    """All current chunks as (source, chunk_index, normalized_content)."""
+def _load_corpus_chunks(config: RunConfig) -> list[tuple[str, int, str]]:
+    """All chunks in this config's table as (source, chunk_index, normalized_content)."""
     with connect() as conn, conn.cursor() as cur:
         cur.execute(
-            "SELECT metadata->>'source', (metadata->>'chunk_index')::int, content "
-            "FROM chunks"
+            sql.SQL(
+                "SELECT metadata->>'source', (metadata->>'chunk_index')::int, content FROM {}"
+            ).format(config_table(config.config_id))
         )
         return [(s, i, _norm(c)) for s, i, c in cur.fetchall()]
 
@@ -54,8 +56,8 @@ def _relevant_chunks(gold_spans: list[str], corpus: list[tuple[str, int, str]]) 
     }
 
 
-def _evaluate_query(question: str, relevant: set[tuple[str, int]]) -> dict:
-    retrieved = retrieve(question, k=MRR_DEPTH)
+def _evaluate_query(question: str, relevant: set[tuple[str, int]], config: RunConfig) -> dict:
+    retrieved = retrieve(question, config=config, k=MRR_DEPTH)
     hits = [((r.source, r.chunk_index) in relevant) for r in retrieved]
 
     precision = {k: sum(hits[:k]) / k for k in K_VALUES}
@@ -74,11 +76,14 @@ def _evaluate_query(question: str, relevant: set[tuple[str, int]]) -> dict:
     }
 
 
-def run() -> dict:
+def run(config: RunConfig = BASELINE) -> dict:
     dataset = _load_dataset()
-    corpus = _load_corpus_chunks()
+    corpus = _load_corpus_chunks(config)
     if not corpus:
-        raise SystemExit("No chunks in the DB. Ingest a document first: python -m app.store data/<doc>")
+        raise SystemExit(
+            f"No chunks for config {config.label} ({config.config_id}). "
+            f"Ingest first: python -m app.store data/<doc>"
+        )
 
     answerable = [d for d in dataset if d["answerable"]]
     per_query = []
@@ -90,7 +95,7 @@ def run() -> dict:
             # A gold span found in the doc but in no single chunk (e.g. split
             # across a boundary). Flag loudly — it would silently tank recall.
             zero_relevant.append(item["id"])
-        result = _evaluate_query(item["question"], relevant)
+        result = _evaluate_query(item["question"], relevant, config)
         per_query.append({
             "id": item["id"],
             "question": item["question"],
@@ -112,9 +117,12 @@ def run() -> dict:
         "run": {"timestamp": datetime.now().isoformat(timespec="seconds"), "type": "retrieval"},
         "config": {
             "dataset": str(DATASET_PATH),
-            "embedding_model": settings.embedding_model,
-            "chunk_size": CHUNK_SIZE,
-            "overlap": OVERLAP,
+            "config_id": config.config_id,
+            "label": config.label,
+            "chunker": config.chunker,
+            "chunker_params": config.chunker_params,
+            "embedder": config.embedder,
+            "embedder_params": config.embedder_params,
             "k_values": K_VALUES,
             "mrr_depth": MRR_DEPTH,
             "corpus_chunks": len(corpus),
@@ -139,8 +147,7 @@ def _print_summary(results: dict) -> None:
     cfg = results["config"]
     print(f"\nRetrieval metrics — {agg['num_queries']} answerable queries "
           f"(excluded unanswerable: {cfg['excluded_unanswerable']})")
-    print(f"corpus: {cfg['corpus_chunks']} chunks | embedding: {cfg['embedding_model']} | "
-          f"chunk {cfg['chunk_size']}/{cfg['overlap']}")
+    print(f"config: {cfg['label']} ({cfg['config_id']}) | corpus: {cfg['corpus_chunks']} chunks")
     if cfg["zero_relevant_queries"]:
         print(f"  WARNING zero-relevant-chunk queries: {cfg['zero_relevant_queries']}")
     print(f"\n  {'K':>3} | {'Precision@K':>12} | {'Recall@K':>10}")

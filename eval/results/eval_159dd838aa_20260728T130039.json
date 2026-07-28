@@ -1,21 +1,21 @@
 {
   "run": {
-    "timestamp": "2026-07-08T16:25:48",
+    "timestamp": "2026-07-28T13:00:39",
     "type": "baseline"
   },
   "config": {
     "dataset": "eval/dataset.json",
-    "config_id": "33fd8fca2f",
-    "label": "recursive512__text-embedding-3-small",
+    "config_id": "159dd838aa",
+    "label": "recursive512__voyage-3-large",
     "corpus_chunks": 34,
     "chunker": "recursive",
     "chunker_params": {
       "chunk_size": 512
     },
-    "embedder": "openai",
+    "embedder": "voyage",
     "embedder_params": {
-      "model": "text-embedding-3-small",
-      "dim": 1536
+      "model": "voyage-3-large",
+      "dim": 1024
     },
     "generation_model": "gpt-4o-mini",
     "judge_model": "gpt-4o-mini",
@@ -34,13 +34,13 @@
       "num_queries": 12,
       "precision_at_k": {
         "1": 0.9167,
-        "3": 0.3889,
-        "5": 0.25
+        "3": 0.3611,
+        "5": 0.2667
       },
       "recall_at_k": {
         "1": 0.7361,
-        "3": 0.8472,
-        "5": 0.875
+        "3": 0.8056,
+        "5": 0.9167
       },
       "mrr": 0.9167
     },
@@ -62,35 +62,35 @@
             "source": "data/mota-origenes.pdf",
             "chunk_index": 4,
             "rank": 1,
-            "similarity": 0.6462,
+            "similarity": 0.7042,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 3,
             "rank": 2,
-            "similarity": 0.6264,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 7,
-            "rank": 3,
-            "similarity": 0.6202,
+            "similarity": 0.6768,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 1,
-            "rank": 4,
-            "similarity": 0.6199,
+            "rank": 3,
+            "similarity": 0.6693,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 29,
+            "chunk_index": 5,
+            "rank": 4,
+            "similarity": 0.6659,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 0,
             "rank": 5,
-            "similarity": 0.599,
+            "similarity": 0.6576,
             "is_relevant": false
           }
         ],
@@ -122,35 +122,35 @@
             "source": "data/mota-origenes.pdf",
             "chunk_index": 3,
             "rank": 1,
-            "similarity": 0.6433,
+            "similarity": 0.654,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 28,
+            "chunk_index": 12,
             "rank": 2,
-            "similarity": 0.6272,
+            "similarity": 0.6166,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 4,
             "rank": 3,
-            "similarity": 0.6239,
+            "similarity": 0.6146,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 29,
             "rank": 4,
-            "similarity": 0.6205,
+            "similarity": 0.6125,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 7,
+            "chunk_index": 5,
             "rank": 5,
-            "similarity": 0.6116,
+            "similarity": 0.6123,
             "is_relevant": false
           }
         ],
@@ -186,47 +186,47 @@
             "source": "data/mota-origenes.pdf",
             "chunk_index": 4,
             "rank": 1,
-            "similarity": 0.6008,
+            "similarity": 0.5972,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 6,
-            "rank": 2,
-            "similarity": 0.5752,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 29,
-            "rank": 3,
-            "similarity": 0.5301,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
             "chunk_index": 7,
-            "rank": 4,
-            "similarity": 0.5234,
+            "rank": 2,
+            "similarity": 0.5903,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 30,
-            "rank": 5,
-            "similarity": 0.4979,
+            "chunk_index": 6,
+            "rank": 3,
+            "similarity": 0.5898,
             "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 5,
+            "rank": 4,
+            "similarity": 0.5772,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 3,
+            "rank": 5,
+            "similarity": 0.5737,
+            "is_relevant": true
           }
         ],
         "precision_at_k": {
           "1": 1.0,
           "3": 0.3333333333333333,
-          "5": 0.2
+          "5": 0.4
         },
         "recall_at_k": {
           "1": 0.5,
           "3": 0.5,
-          "5": 0.5
+          "5": 1.0
         },
         "reciprocal_rank": 1.0
       },
@@ -248,37 +248,37 @@
         "retrieved": [
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 33,
-            "rank": 1,
-            "similarity": 0.5907,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
             "chunk_index": 6,
-            "rank": 2,
-            "similarity": 0.5782,
+            "rank": 1,
+            "similarity": 0.6658,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 31,
+            "rank": 2,
+            "similarity": 0.627,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 8,
             "rank": 3,
-            "similarity": 0.5605,
+            "similarity": 0.622,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 1,
             "rank": 4,
-            "similarity": 0.5504,
+            "similarity": 0.6191,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 8,
+            "chunk_index": 33,
             "rank": 5,
-            "similarity": 0.536,
+            "similarity": 0.6136,
             "is_relevant": false
           }
         ],
@@ -310,35 +310,35 @@
             "source": "data/mota-origenes.pdf",
             "chunk_index": 4,
             "rank": 1,
-            "similarity": 0.6258,
+            "similarity": 0.5694,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 6,
+            "chunk_index": 5,
             "rank": 2,
-            "similarity": 0.5183,
+            "similarity": 0.527,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 29,
             "rank": 3,
-            "similarity": 0.5128,
+            "similarity": 0.5182,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 7,
+            "chunk_index": 6,
             "rank": 4,
-            "similarity": 0.512,
+            "similarity": 0.5119,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 14,
+            "chunk_index": 0,
             "rank": 5,
-            "similarity": 0.4986,
+            "similarity": 0.4935,
             "is_relevant": false
           }
         ],
@@ -370,35 +370,35 @@
             "source": "data/mota-origenes.pdf",
             "chunk_index": 15,
             "rank": 1,
-            "similarity": 0.5726,
+            "similarity": 0.7225,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 33,
+            "chunk_index": 16,
             "rank": 2,
-            "similarity": 0.5475,
+            "similarity": 0.6269,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 25,
+            "chunk_index": 33,
             "rank": 3,
-            "similarity": 0.5337,
+            "similarity": 0.6143,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 30,
+            "chunk_index": 19,
             "rank": 4,
-            "similarity": 0.5062,
+            "similarity": 0.609,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 8,
+            "chunk_index": 31,
             "rank": 5,
-            "similarity": 0.4938,
+            "similarity": 0.6051,
             "is_relevant": false
           }
         ],
@@ -430,35 +430,35 @@
             "source": "data/mota-origenes.pdf",
             "chunk_index": 20,
             "rank": 1,
-            "similarity": 0.4857,
+            "similarity": 0.5716,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 11,
+            "chunk_index": 21,
             "rank": 2,
-            "similarity": 0.4369,
+            "similarity": 0.5017,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 21,
+            "chunk_index": 31,
             "rank": 3,
-            "similarity": 0.4284,
+            "similarity": 0.4969,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 12,
+            "rank": 4,
+            "similarity": 0.4938,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 27,
-            "rank": 4,
-            "similarity": 0.4082,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 2,
             "rank": 5,
-            "similarity": 0.4036,
+            "similarity": 0.493,
             "is_relevant": false
           }
         ],
@@ -490,35 +490,35 @@
             "source": "data/mota-origenes.pdf",
             "chunk_index": 20,
             "rank": 1,
-            "similarity": 0.5349,
+            "similarity": 0.6598,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 2,
-            "rank": 2,
-            "similarity": 0.5297,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 11,
-            "rank": 3,
-            "similarity": 0.5234,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 3,
-            "rank": 4,
-            "similarity": 0.4987,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
             "chunk_index": 12,
+            "rank": 2,
+            "similarity": 0.5865,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 31,
+            "rank": 3,
+            "similarity": 0.5736,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 27,
+            "rank": 4,
+            "similarity": 0.5588,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 24,
             "rank": 5,
-            "similarity": 0.4931,
+            "similarity": 0.548,
             "is_relevant": false
           }
         ],
@@ -552,37 +552,37 @@
         "retrieved": [
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 2,
-            "rank": 1,
-            "similarity": 0.5846,
-            "is_relevant": true
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 18,
-            "rank": 2,
-            "similarity": 0.5698,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
             "chunk_index": 1,
-            "rank": 3,
-            "similarity": 0.5598,
+            "rank": 1,
+            "similarity": 0.6837,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 33,
-            "rank": 4,
-            "similarity": 0.554,
-            "is_relevant": false
+            "chunk_index": 2,
+            "rank": 2,
+            "similarity": 0.6563,
+            "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 8,
+            "rank": 3,
+            "similarity": 0.6489,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 17,
+            "rank": 4,
+            "similarity": 0.6457,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 18,
             "rank": 5,
-            "similarity": 0.5529,
+            "similarity": 0.6453,
             "is_relevant": false
           }
         ],
@@ -618,46 +618,46 @@
             "source": "data/mota-origenes.pdf",
             "chunk_index": 17,
             "rank": 1,
-            "similarity": 0.7138,
-            "is_relevant": true
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 16,
-            "rank": 2,
-            "similarity": 0.6739,
+            "similarity": 0.7342,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 18,
-            "rank": 3,
-            "similarity": 0.6667,
+            "rank": 2,
+            "similarity": 0.7118,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 1,
-            "rank": 4,
-            "similarity": 0.6184,
+            "rank": 3,
+            "similarity": 0.6913,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
-            "chunk_index": 3,
+            "chunk_index": 16,
+            "rank": 4,
+            "similarity": 0.6545,
+            "is_relevant": true
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 19,
             "rank": 5,
-            "similarity": 0.5989,
+            "similarity": 0.6402,
             "is_relevant": false
           }
         ],
         "precision_at_k": {
           "1": 1.0,
-          "3": 0.6666666666666666,
+          "3": 0.3333333333333333,
           "5": 0.4
         },
         "recall_at_k": {
           "1": 0.5,
-          "3": 1.0,
+          "3": 0.5,
           "5": 1.0
         },
         "reciprocal_rank": 1.0
@@ -678,35 +678,35 @@
             "source": "data/mota-origenes.pdf",
             "chunk_index": 19,
             "rank": 1,
-            "similarity": 0.7173,
+            "similarity": 0.6244,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 16,
             "rank": 2,
-            "similarity": 0.6845,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 15,
-            "rank": 3,
-            "similarity": 0.6388,
+            "similarity": 0.6067,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 18,
+            "rank": 3,
+            "similarity": 0.5477,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 15,
             "rank": 4,
-            "similarity": 0.6155,
+            "similarity": 0.5414,
             "is_relevant": false
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 17,
             "rank": 5,
-            "similarity": 0.5343,
+            "similarity": 0.4903,
             "is_relevant": false
           }
         ],
@@ -746,35 +746,35 @@
             "source": "data/mota-origenes.pdf",
             "chunk_index": 13,
             "rank": 1,
-            "similarity": 0.703,
-            "is_relevant": true
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 12,
-            "rank": 2,
-            "similarity": 0.6685,
-            "is_relevant": true
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 6,
-            "rank": 3,
-            "similarity": 0.6377,
-            "is_relevant": false
-          },
-          {
-            "source": "data/mota-origenes.pdf",
-            "chunk_index": 14,
-            "rank": 4,
-            "similarity": 0.6255,
+            "similarity": 0.5909,
             "is_relevant": true
           },
           {
             "source": "data/mota-origenes.pdf",
             "chunk_index": 5,
+            "rank": 2,
+            "similarity": 0.5887,
+            "is_relevant": false
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 14,
+            "rank": 3,
+            "similarity": 0.5787,
+            "is_relevant": true
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 12,
+            "rank": 4,
+            "similarity": 0.5765,
+            "is_relevant": true
+          },
+          {
+            "source": "data/mota-origenes.pdf",
+            "chunk_index": 6,
             "rank": 5,
-            "similarity": 0.5815,
+            "similarity": 0.5245,
             "is_relevant": false
           }
         ],
@@ -795,8 +795,8 @@
   "generation": {
     "aggregate": {
       "faithfulness": 0.8333,
-      "answer_relevancy": 0.87,
-      "context_precision": 0.8934,
+      "answer_relevancy": 0.8587,
+      "context_precision": 0.8684,
       "context_recall": 0.9167,
       "refusal_accuracy": 1.0
     },
@@ -808,8 +808,8 @@
         "answer": "Cannabis sativa was first domesticated in early Neolithic times in East Asia.",
         "scores": {
           "faithfulness": 1.0,
-          "answer_relevancy": 0.9152194701004512,
-          "context_precision": 0.999999999975,
+          "answer_relevancy": 0.9151822760666948,
+          "context_precision": 0.9999999999666667,
           "context_recall": 1.0
         }
       },
@@ -821,7 +821,7 @@
         "scores": {
           "faithfulness": 1.0,
           "answer_relevancy": 0.9581963342701183,
-          "context_precision": 0.9999999999,
+          "context_precision": 0.99999999995,
           "context_recall": 1.0
         }
       },
@@ -829,11 +829,11 @@
         "id": "q03",
         "category": "factual",
         "question": "How old is the cannabis pollen identified in northwestern China by fossil pollen studies?",
-        "answer": "The cannabis pollen identified in northwestern China is dated back to 19.6 million years ago.",
+        "answer": "The cannabis pollen identified in northwestern China by fossil pollen studies dates back to 19.6 million years ago.",
         "scores": {
           "faithfulness": 1.0,
-          "answer_relevancy": 0.9454210231384413,
-          "context_precision": 0.9999999999,
+          "answer_relevancy": 0.903565463009747,
+          "context_precision": 0.699999999965,
           "context_recall": 1.0
         }
       },
@@ -856,7 +856,7 @@
         "answer": "According to McPartland, the northeastern Tibetan Plateau near Qinghai Lake ought to be the origin center of hemp.",
         "scores": {
           "faithfulness": 1.0,
-          "answer_relevancy": 0.9073780158995531,
+          "answer_relevancy": 0.8499787758694206,
           "context_precision": 0.9999999999,
           "context_recall": 1.0
         }
@@ -865,10 +865,10 @@
         "id": "q06",
         "category": "factual",
         "question": "What modern genome editing technique does the article mention for precisely modifying cannabinoid biosynthesis genes?",
-        "answer": "The article mentions the modern genome editing technique CRISPR/Cas9 for precisely modifying cannabinoid biosynthesis genes.",
+        "answer": "The modern genome editing technique mentioned for precisely modifying cannabinoid biosynthesis genes is CRISPR/Cas9.",
         "scores": {
           "faithfulness": 1.0,
-          "answer_relevancy": 0.9877078859256506,
+          "answer_relevancy": 0.95330220007798,
           "context_precision": 0.9999999999,
           "context_recall": 1.0
         }
@@ -880,7 +880,7 @@
         "answer": "Canada legalized recreational cannabis in October 2018.",
         "scores": {
           "faithfulness": 1.0,
-          "answer_relevancy": 0.9999999999999998,
+          "answer_relevancy": 0.9999996094642299,
           "context_precision": 0.9999999999,
           "context_recall": 1.0
         }
@@ -892,7 +892,7 @@
         "answer": "Uruguay was the first country to fully legalize cannabis.",
         "scores": {
           "faithfulness": 1.0,
-          "answer_relevancy": 1.0000000000000002,
+          "answer_relevancy": 0.9999996357562575,
           "context_precision": 0.9999999999,
           "context_recall": 1.0
         }
@@ -905,7 +905,7 @@
         "scores": {
           "faithfulness": 0.0,
           "answer_relevancy": 0.9999996051383234,
-          "context_precision": 0.8333333332916666,
+          "context_precision": 0.99999999995,
           "context_recall": 1.0
         }
       },
@@ -917,7 +917,7 @@
         "scores": {
           "faithfulness": 1.0,
           "answer_relevancy": 0.871671591496414,
-          "context_precision": 0.8874999999778125,
+          "context_precision": 0.8041666666465626,
           "context_recall": 1.0
         }
       },
@@ -928,8 +928,8 @@
         "answer": "The genetic technique that has been central to improving Indica strains is polyploidization. One trait it enhanced is the increase in cannabidiol (CBD) content.",
         "scores": {
           "faithfulness": 1.0,
-          "answer_relevancy": 0.9745956966049644,
-          "context_precision": 0.99999999995,
+          "answer_relevancy": 0.9287076332262748,
+          "context_precision": 0.9166666666361111,
           "context_recall": 1.0
         }
       },
@@ -937,10 +937,10 @@
         "id": "q12",
         "category": "multi-hop",
         "question": "What role did the Hexi Corridor play in the spread of cannabis, and which larger trade network was it part of?",
-        "answer": "The Hexi Corridor played a significant role as a hub for the spread of domesticated plants, animals, and cultural elements, including cannabis, originally from Southwest Asia and Europe. It was part of the larger trade network known as the Silk Road, which connected the East and West and facilitated the exchange of cannabis between different regions.",
+        "answer": "The Hexi Corridor played a significant role as a hub for the spread of domesticated plants, animals, and cultural elements, including cannabis, originally from Southwest Asia and Europe. It was part of the Silk Road, a network of trade routes connecting the East and West, which facilitated the exchange of cannabis between different regions, contributing to its widespread cultivation and use.",
         "scores": {
           "faithfulness": 1.0,
-          "answer_relevancy": 0.8798907096320389,
+          "answer_relevancy": 0.9233151734276785,
           "context_precision": 0.99999999998,
           "context_recall": 1.0
         }
