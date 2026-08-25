@@ -44,6 +44,10 @@ class RunConfig:
         default_factory=lambda: {"model": "text-embedding-3-small", "dim": 1536}
     )
     retrieval_k: int = 5
+    # Read-time only: "dense" (vector) or "hybrid" (dense + BM25 fused via RRF).
+    # Deliberately NOT part of config_id — a hybrid config reads the same table its
+    # dense twin populated; only the retrieval strategy differs.
+    retrieval_mode: str = "dense"
 
     def build_chunker(self) -> Chunker:
         return CHUNKER_REGISTRY[self.chunker](**self.chunker_params)

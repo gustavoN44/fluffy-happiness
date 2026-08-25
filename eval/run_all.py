@@ -49,6 +49,7 @@ def run(config: RunConfig = BASELINE) -> dict:
             "generation_model": gc["generation_model"],
             "judge_model": gc["judge_model"],
             "retrieval_k": config.retrieval_k,
+            "retrieval_mode": config.retrieval_mode,
             "k_values": rc["k_values"],
             "mrr_depth": rc["mrr_depth"],
             "num_answerable": gc["num_answerable"],
@@ -98,6 +99,7 @@ def _print_summary(baseline: dict) -> None:
     print(f"  corpus {cfg['corpus_chunks']} chunks | chunker {cfg['chunker']} {cfg['chunker_params']}")
     print(f"  embedder {cfg['embedder']} {cfg['embedder_params']}")
     print(f"  gen {cfg['generation_model']} | judge {cfg['judge_model']} | k={cfg['retrieval_k']} | "
+          f"mode={cfg['retrieval_mode']} | "
           f"{cfg['num_answerable']} answerable + {cfg['num_unanswerable']} unanswerable")
 
     print(f"\n  RETRIEVAL (deterministic)      {'K':>3} | {'P@K':>6} | {'R@K':>6}")

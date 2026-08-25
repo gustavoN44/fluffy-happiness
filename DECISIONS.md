@@ -397,3 +397,98 @@ differing dimensionality/chunking are stored, and which second embedder to add.
 - Step 5 (exit criterion): `recursive512__voyage-3-large` ingested and **fully evaluated end-to-end (retrieval + generation) by config change alone**, zero pipeline edits. Three configs now coexist at different dims (1536/1536/1024). Baseline still reproduces exactly (P@1 0.917 / R@5 0.875 / MRR 0.917).
 
 **Exit criterion met:** chunking strategy and embedding model are both swappable via a `RunConfig` with no pipeline code changes. Early (non-authoritative) data point — recursive512 × voyage-3-large scored R@5 0.917 vs the baseline's 0.875; the systematic comparison is Phase 5.
+
+---
+
+## D7 — Phase 4 hybrid retrieval: rank_bm25 + Reciprocal Rank Fusion (RBAC pending)
+
+- **Date:** 2026-07-17
+- **Status:** Accepted (hybrid retrieval). RBAC decisions **deferred to Step 3** — see the pending note below; this entry will be extended when they're made.
+- **ROADMAP reference:** Phase 4 — Hybrid retrieval and access control → "Add BM25 keyword search and fuse it with dense retrieval... Then add the RBAC layer" ([ROADMAP.md](ROADMAP.md) lines 36–40). Related: Phase 5 optional stretch (hybrid vs dense on the winning cell, [ROADMAP.md](ROADMAP.md) line 69).
+- **Type:** Decision (engine + fusion algorithm; roadmap mandates BM25 + fusion but not the mechanism).
+- **Implemented in (planned):** `app/lexical.py` (BM25 search), `app/retriever.py` (fusion + `retrieval_mode`), `requirements.txt` (rank_bm25).
+
+**Context**
+Dense retrieval alone can miss exact terms (names, codes, rare words) because an
+embedding blurs them. Phase 4 adds BM25 keyword search and fuses it with dense as a
+selectable mode. Two design questions: which BM25 engine, and how to fuse.
+
+**Decision**
+1. **BM25 engine: `rank_bm25` (Python), in-memory over a config's chunk texts.**
+2. **Fusion: Reciprocal Rank Fusion (RRF)** — `score = Σ 1/(k + rank_i)`, k≈60.
+3. **Delivered as a mode**: `retrieval_mode ∈ {dense, hybrid}`, dense stays default.
+
+**Why — BM25 engine (options compared)**
+
+| Option | True BM25? | In-DB? | Infra cost | Verdict |
+|---|---|---|---|---|
+| **rank_bm25 (Python)** ✅ | yes | no (app-side) | none — pure-Python lib | **Chosen.** Genuine BM25, zero infra churn, fine at our scale (tens of chunks). |
+| ParadeDB pg_search | yes | yes | swap Docker image, **destructive** volume re-init, re-ingest all configs | Rejected: heavy infra change + wipe for a tiny corpus; most production-grade but overkill now. |
+| Postgres native FTS (ts_rank) | **no** | yes | none (built-in) | Rejected: `ts_rank`/`ts_rank_cd` is cover-density ranking, not BM25 — fails the roadmap's explicit "BM25". |
+
+Trade-off accepted with rank_bm25: the lexical index lives in Python (rebuilt from
+the config's table per search), so fusion and later RBAC filtering happen in app
+code rather than a single SQL query. Acceptable given the corpus size and the goal
+of zero infra churn.
+
+**Why — fusion (options compared)**
+
+| Option | Needs score normalization? | Params | Verdict |
+|---|---|---|---|
+| **RRF** ✅ | no (rank-based) | just k (~60) | **Chosen.** Cosine distance and BM25 scores are on totally different scales; RRF sidesteps that by combining ranks. Robust, standard default. |
+| Weighted score blend (α·dense + (1−α)·bm25) | yes | α weight + normalization | Rejected for now: more tunable (α is itself a knob) but sensitive to score-distribution quirks and needs careful normalization. Could revisit as a Phase 5 knob. |
+
+**Tradeoffs**
+- **In-memory lexical index** rebuilt per query — negligible at tens of chunks, but
+  not how you'd scale it; a real deployment would use an in-DB BM25 (ParadeDB) or a
+  search engine. Documented as a scale-bounded choice.
+- **Fusion/RBAC in app code**, not one SQL query — more app logic, but keeps the DB
+  image unchanged.
+- **New dependency** (rank_bm25) in both venvs.
+
+**RBAC — DECIDED (Phase 4 Step 3, 2026-07-17)**
+- **Implemented in:** [app/rbac.py](app/rbac.py) (`User`, `acl_condition`, `where_clause`), [app/store.py](app/store.py) (`allowed_roles` stamped into metadata), [app/lexical.py](app/lexical.py) + [app/retriever.py](app/retriever.py) (filtered reads), [app/main.py](app/main.py) (`X-User-Roles` header), [tests/test_rbac.py](tests/test_rbac.py) (negative test), [data/confidential.md](data/confidential.md).
+
+1. **ACL model: role-based `allowed_roles`.** Each document's chunks store
+   `metadata.allowed_roles` (e.g. `["public"]`, `["admin"]`); a `User` has roles; a
+   chunk is visible when the sets intersect (Postgres `jsonb_exists_any`).
+   *Chosen over* classification levels (hierarchical but less flexible, and not
+   strictly "role-based" as the roadmap specifies) and owner-based ACLs (models
+   per-user ownership, a poor fit for "documents a user may see").
+2. **Identity via `X-User-Roles` header → `User`.** The API reads roles from a
+   header (absent ⇒ `public`) and passes a `User` into `retrieve()`. *Chosen over* a
+   field in the request body, because in real systems identity comes from the auth
+   layer, not the query payload. Real auth/JWT remains out of scope.
+3. **Demo data: a dedicated admin-only document.** [data/confidential.md](data/confidential.md)
+   (codename "Project Bluefin") is ingested with `allowed_roles=["admin"]` beside the
+   public paper. *Chosen over* tagging a subset of the paper's chunks, which would
+   split one document across access tiers — artificial and a murkier test.
+
+**Enforcement design**
+- **Default-deny for real users:** an untagged chunk (no `allowed_roles`) is
+  invisible to any `User`. `user=None` means an unrestricted/trusted call, which is
+  what the eval harness uses — so the harness needed no changes and the baseline
+  still reproduces exactly.
+- **Filtered at the DB read on BOTH paths.** Dense adds the ACL to its `WHERE`;
+  lexical filters the corpus *before* building the BM25 index — so forbidden
+  documents don't even influence lexical statistics (IDF, average length). No leak
+  through scores, not just through results.
+- **Negative test is self-cleaning:** it ingests the confidential doc, asserts, then
+  deletes it, leaving the eval table paper-only.
+
+**RBAC tradeoffs**
+- No real authentication — a caller can claim any role via the header. Acceptable:
+  the roadmap scopes Phase 4 to *retrieval filtering*, and an auth gateway would
+  supply verified identity in production.
+- Document-level (not passage-level) ACLs; every chunk of a document shares its ACL.
+- `user=None` bypassing the filter is a deliberate trusted-path escape hatch; it must
+  never be reachable from an HTTP request (the API always constructs a `User`).
+
+**Verification — Phase 4 exit criterion MET (2026-07-17)**
+Hybrid retrieval available as a mode, and access control enforced + proven:
+`tests/test_rbac.py` passes — on **both** dense and hybrid, the public user is denied
+the confidential passage while an **admin positive control** retrieves it (proving the
+denial is access control, not a broken query), and the generator refuses ("I don't
+know based on the provided context.") instead of leaking. Baseline IR unchanged
+(P@1 0.917 / R@5 0.875 / MRR 0.917). Measured hybrid-vs-dense gain on the same table:
+R@5 0.875 → 0.958, MRR 0.917 → 0.938.

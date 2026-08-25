@@ -304,6 +304,85 @@ question the document actually covers ("where was cannabis domesticated?") score
 nothing closer to return, and the low score *says so*. Honest scores are exactly
 what lets the Phase 2 harness measure retrieval quality instead of assuming it.
 
+### Lexical retrieval: BM25
+
+**File:** [app/lexical.py](app/lexical.py) · **Entry:** `keyword_search(query, config, k) -> list[LexicalHit]`
+
+Dense retrieval (above) matches *meaning*, but it can **blur exact terms** — names,
+codes, rare words — because an embedding compresses them into a general direction.
+Phase 4 adds a second, lexical retriever: **BM25**, which matches terms *literally*.
+It's the complement dense search can't provide, and Step 2 fuses the two.
+
+**What tokenizing means, and why it's needed.** Lexical search compares *bags of
+terms*, not raw strings, so both chunks and query are first cut into tokens with the
+*same* recipe: lowercase, then extract word-character runs (`\w+`), dropping
+punctuation. `"CRISPR/Cas9 genome editing."` → `["crispr", "cas9", "genome",
+"editing"]`. Lowercasing lets `"Cannabis"` match `"cannabis"`; applying the identical
+tokenizer to corpus and query is what makes their terms line up at all. It's a
+deliberately simple baseline: **no stemming** (`edit` ≠ `editing`), **no stopword
+removal** (IDF handles common words), and compounds split (`CRISPR/Cas9` → two
+tokens).
+
+**What a BM25 index is, and how it scores.** `BM25Okapi(corpus)` (from `rank_bm25`)
+is an in-memory object that precomputes per-chunk term frequencies and length, plus
+each term's corpus-wide document frequency and the average chunk length. Given a
+query it returns one relevance score per chunk, built from three ideas:
+
+- **Term frequency, saturating** — more occurrences score higher, with diminishing
+  returns (10 hits ≠ 10× one hit).
+- **Inverse document frequency (IDF)** — **rare terms are worth more.** A token in
+  one chunk (`crispr`) is decisive; a token in every chunk (`cannabis`) counts for
+  almost nothing. This is the key term, and it's why common words don't dominate.
+- **Length normalization** — long chunks are discounted so they don't win just by
+  being big.
+
+**Purpose, made concrete.** On our corpus, the query `"CRISPR"` scores the one chunk
+containing that literal token at **2.71** and every other chunk at exactly **0.00** —
+IDF makes a rare term pinpoint its chunk. That precision on exact terms is what dense
+retrieval can't guarantee, and why fusing lexical + dense (Step 2) is expected to
+beat either alone. Results carry `content`, `source`, `chunk_index`, and `bm25_score`.
+
+*(Scale note, DECISIONS.md D7: the BM25 index is rebuilt in memory from the config's
+table on each search — fine at tens of chunks, not how you'd scale it.)*
+
+### Hybrid retrieval: fusing dense + BM25 with RRF
+
+**File:** [app/retriever.py](app/retriever.py) · **Mode:** `config.retrieval_mode = "hybrid"`
+
+Dense and BM25 have *complementary* blind spots: dense nails meaning but blurs exact
+terms; BM25 nails exact terms but is deaf to paraphrase. **Hybrid** runs both and
+merges their rankings, aiming to get the best of each. It's a **read-time mode** —
+it reuses the same table its dense twin populated (same chunks, same embeddings),
+just adds a BM25 pass at query time, so `retrieval_mode` is *not* part of `config_id`.
+
+**The fusion problem.** You can't just add the two scores: cosine distances (~0.2–0.5)
+and BM25 scores (~0–10) live on completely different scales, and normalizing them is
+fiddly and brittle. **Reciprocal Rank Fusion (RRF)** sidesteps this by ignoring the
+raw scores and fusing on **rank** instead. Each retriever contributes, for a chunk it
+ranked at position *r*:
+
+$$\text{RRF contribution} = \frac{1}{k + r}\quad(k \approx 60)$$
+
+A chunk's final score is the **sum** of its contributions across both lists, and we
+sort by that. Consequences:
+
+- A chunk ranked #1 by either retriever gets a big `1/(60+1)` push.
+- A chunk both retrievers rank highly accumulates **both** contributions — so
+  cross-method agreement is rewarded, which is exactly the signal we want.
+- The `k≈60` constant softens the gap between top ranks, so no single list can
+  dominate purely by being confident.
+
+Chunks are aligned across the two lists by `(source, chunk_index)` — the shared
+identity both retrievers return. The fused `RetrievedChunk` carries a generic
+`score` (the RRF value for hybrid, cosine similarity for dense); `distance`/
+`similarity` are populated only for chunks that came through the dense side.
+
+**Does it actually help?** On our corpus, holding chunks and embeddings fixed and
+flipping *only* the mode: **Recall@5 rose 0.875 → 0.958 and MRR 0.917 → 0.938**, with
+Precision@1 unchanged — BM25 pulled exact-term chunks into the top-5 that dense had
+missed. That's a measured gain, not a hoped-for one, which is the whole point of
+having built the eval harness first.
+
 ---
 
 ## Generate

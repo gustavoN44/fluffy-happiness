@@ -5,11 +5,12 @@ the source passages and their relevance scores (the README's transparency
 requirement). Run with: uvicorn app.main:app --reload
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from pydantic import BaseModel, Field
 
 from app.generator import generate_answer
 from app.pipeline import BASELINE
+from app.rbac import User
 from app.retriever import DEFAULT_K, retrieve
 
 app = FastAPI(title="RAG Evaluation System", version="0.1.0")
@@ -27,8 +28,9 @@ class QueryRequest(BaseModel):
 class Source(BaseModel):
     source: str
     chunk_index: int
-    similarity: float
-    distance: float
+    score: float                       # ranking score (cosine similarity or RRF)
+    similarity: float | None = None    # dense only
+    distance: float | None = None      # dense only
     content: str
 
 
@@ -43,13 +45,20 @@ def health() -> dict[str, str]:
 
 
 @app.post("/query", response_model=QueryResponse)
-def query(request: QueryRequest) -> QueryResponse:
-    chunks = retrieve(request.question, config=ACTIVE_CONFIG, k=request.k)
+def query(
+    request: QueryRequest,
+    x_user_roles: str | None = Header(default=None),
+) -> QueryResponse:
+    # Identity comes from the auth layer; here, a header. No header => public.
+    roles = [r.strip() for r in x_user_roles.split(",")] if x_user_roles else ["public"]
+    user = User(id="api-caller", roles=roles)
+    chunks = retrieve(request.question, config=ACTIVE_CONFIG, k=request.k, user=user)
     answer = generate_answer(request.question, chunks)
     sources = [
         Source(
             source=c.source,
             chunk_index=c.chunk_index,
+            score=c.score,
             similarity=c.similarity,
             distance=c.distance,
             content=c.content,

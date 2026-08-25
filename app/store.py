@@ -25,19 +25,25 @@ def store_chunks(
     source: str,
     chunks: list[Chunk],
     vectors: list[list[float]],
+    allowed_roles: list[str] | None = None,
 ) -> tuple[int, int]:
     """Replace all rows for `source` in this config's table. Returns
-    (rows_deleted, rows_inserted); delete + insert commit together."""
+    (rows_deleted, rows_inserted); delete + insert commit together. When
+    `allowed_roles` is given it is stamped into each chunk's metadata for RBAC."""
     if len(chunks) != len(vectors):
         raise ValueError(
             f"chunks ({len(chunks)}) and vectors ({len(vectors)}) length mismatch"
         )
 
     tbl = config_table(config.config_id)
-    rows = [
-        (c.text, v, Json({"source": source, "chunk_index": c.chunk_index}))
-        for c, v in zip(chunks, vectors)
-    ]
+
+    def _meta(c: Chunk) -> dict:
+        m = {"source": source, "chunk_index": c.chunk_index}
+        if allowed_roles is not None:
+            m["allowed_roles"] = allowed_roles
+        return m
+
+    rows = [(c.text, v, Json(_meta(c))) for c, v in zip(chunks, vectors)]
 
     with conn.cursor() as cur:
         cur.execute(
@@ -53,9 +59,14 @@ def store_chunks(
     return deleted, len(rows)
 
 
-def ingest_document(path: str | Path, config: RunConfig = BASELINE) -> tuple[int, int]:
+def ingest_document(
+    path: str | Path,
+    config: RunConfig = BASELINE,
+    allowed_roles: list[str] | None = None,
+) -> tuple[int, int]:
     """Run the full pipeline for one document under `config` and store it in the
-    config's table. Returns (rows_deleted, rows_inserted)."""
+    config's table. `allowed_roles` sets the document's RBAC ACL (None = untagged).
+    Returns (rows_deleted, rows_inserted)."""
     source = str(path)
     chunker = config.build_chunker()
     embedder = config.build_embedder()
@@ -67,7 +78,7 @@ def ingest_document(path: str | Path, config: RunConfig = BASELINE) -> tuple[int
         ensure_registry(conn)
         ensure_config_table(conn, config.config_id, embedder.dim)
         register_config(conn, config, embedder.dim)
-        return store_chunks(conn, config, source, chunks, vectors)
+        return store_chunks(conn, config, source, chunks, vectors, allowed_roles)
 
 
 if __name__ == "__main__":

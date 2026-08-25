@@ -67,7 +67,7 @@ def _evaluate_query(question: str, relevant: set[tuple[str, int]], config: RunCo
     return {
         "retrieved": [
             {"source": r.source, "chunk_index": r.chunk_index, "rank": i + 1,
-             "similarity": round(r.similarity, 4), "is_relevant": hits[i]}
+             "score": round(r.score, 4), "is_relevant": hits[i]}
             for i, r in enumerate(retrieved)
         ],
         "precision_at_k": precision,
@@ -123,6 +123,7 @@ def run(config: RunConfig = BASELINE) -> dict:
             "chunker_params": config.chunker_params,
             "embedder": config.embedder,
             "embedder_params": config.embedder_params,
+            "retrieval_mode": config.retrieval_mode,
             "k_values": K_VALUES,
             "mrr_depth": MRR_DEPTH,
             "corpus_chunks": len(corpus),
