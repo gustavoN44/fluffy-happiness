@@ -65,6 +65,7 @@ def run(config: RunConfig = BASELINE) -> dict:
             "per_query": generation["per_query"],
             "refusals": generation["refusals"],
         },
+        "cost_latency": generation.get("cost_latency", {}),
         "notes": NOTE,
     }
 
@@ -111,6 +112,14 @@ def _print_summary(baseline: dict) -> None:
     for name in ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]:
         print(f"    {name:<20}: {g[name]:.3f}")
     print(f"    {'refusal_accuracy':<20}: {g['refusal_accuracy']:.3f}")
+
+    cl = results.get("cost_latency") or {}
+    if cl:
+        print("\n  COST & LATENCY (per query, avg)")
+        print(f"    {'cost':<20}: ${cl['avg_cost_usd']:.6f}   ({cl['avg_tokens']:.0f} tokens)")
+        phases = cl.get("avg_seconds", {})
+        parts = "  ".join(f"{p}={phases[p]:.3f}s" for p in sorted(phases))
+        print(f"    {'latency':<20}: {cl['avg_total_seconds']:.3f}s total   {parts}")
     print("=" * 58)
 
 

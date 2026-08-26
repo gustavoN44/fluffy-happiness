@@ -9,6 +9,7 @@ faithfulness metric will later score.
 from openai import OpenAI
 
 from app.config import settings
+from app.metering import record_usage, timed
 from app.retriever import RetrievedChunk
 
 _client = OpenAI(api_key=settings.openai_api_key)
@@ -40,14 +41,21 @@ def generate_answer(question: str, chunks: list[RetrievedChunk]) -> str:
         "Answer using only the context above."
     )
 
-    response = _client.chat.completions.create(
-        model=settings.generation_model,
-        temperature=settings.generation_temperature,
-        messages=[
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": user_message},
-        ],
-    )
+    with timed("generation"):
+        response = _client.chat.completions.create(
+            model=settings.generation_model,
+            temperature=settings.generation_temperature,
+            messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user", "content": user_message},
+            ],
+        )
+    if getattr(response, "usage", None) is not None:
+        record_usage(
+            settings.generation_model,
+            response.usage.prompt_tokens,
+            response.usage.completion_tokens,
+        )
     return response.choices[0].message.content.strip()
 
 

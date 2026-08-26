@@ -492,3 +492,59 @@ denial is access control, not a broken query), and the generator refuses ("I don
 know based on the provided context.") instead of leaking. Baseline IR unchanged
 (P@1 0.917 / R@5 0.875 / MRR 0.917). Measured hybrid-vs-dense gain on the same table:
 R@5 0.875 → 0.958, MRR 0.917 → 0.938.
+
+---
+
+## D8 — Eval dataset expanded to 35 items, with engineered difficulty and an exact-term category
+
+- **Date:** 2026-08-25
+- **Status:** Accepted; user reviewed and approved all 21 new items.
+- **ROADMAP reference:** Phase 2 — "30–50 questions with ground-truth answers and labeled relevant chunks" ([ROADMAP.md](ROADMAP.md) line 26), fulfilled late, as [D3](#d3--evaluation-dataset-span-based-gold-labels-llm-drafted--human-reviewed) said it must be before Phase 5 conclusions relied on it. Directly serves Phase 5 ([ROADMAP.md](ROADMAP.md) lines 42–46).
+- **Type:** Decision (benchmark design) + completion of a deferred obligation.
+- **Implemented in:** [eval/dataset.json](eval/dataset.json) (35 items).
+
+**Context**
+D3 built a 14-item pilot and explicitly flagged that it must grow before the matrix
+leaned on it. Reviewing the pilot before Phase 5 surfaced a second, sharper problem:
+a **ceiling effect**. 11 of 12 answerable questions put a relevant chunk at rank 1
+(MRR 0.917). A benchmark nearly everything passes cannot *discriminate* — and
+discrimination between six configs is the entire job of the experiment matrix.
+
+**Decision**
+1. **Expand to 35 items** (30 answerable + 5 unanswerable, 14% negatives) — inside
+   the roadmap's 30–50 band. Authored LLM-drafted → human-reviewed, same as D3.
+2. **Engineer a difficulty spread** (14 easy / 13 medium / 8 hard) rather than
+   accepting whatever difficulty naturally arose.
+3. **Add an `exact-term` category** (9 items: specific figures, dates, proper names,
+   Latin binomials, a genus name) alongside `factual` and `multi-hop`, to exercise
+   lexical matching and make the dense-vs-hybrid comparison measurable.
+4. **Recategorize q04** (110 accessions) `factual` → `exact-term`; it turns on a
+   specific figure and was the pilot's one dense-retrieval miss. Wording and spans
+   unchanged.
+
+**Why**
+- *Engineered difficulty:* a dataset where all six matrix cells score ~0.92 yields no
+  defensible winner. Deliberately including items current retrieval plausibly fails
+  is what gives the matrix statistical room to separate configs.
+- *Exact-term category:* Phase 4 added hybrid retrieval, but the pilot barely tested
+  it. Exact-term questions are where BM25 beats dense, so without them the hybrid
+  gain (and the Phase 5 stretch goal) would be invisible.
+- *Chosen over* a "natural mix" of realistic user questions, which risked repeating
+  the ceiling effect.
+
+**Tradeoffs**
+- **Engineered ≠ natural.** The set is a *benchmark*, tuned to discriminate, not a
+  faithful sample of real user queries. Documented deliberately: absolute scores on
+  it are not a claim about real-world experience, only a basis for comparing configs.
+- **Difficulty labels are intent, not measurement.** They record what was *aimed at*.
+  Reality partly disagrees: dense missed `q26` at top-5 despite an "easy" label,
+  while some "hard" items were retrieved at rank 1. Treat the field as a design aid.
+- **The 14-item baseline is invalidated** — old numbers are not comparable. Expected:
+  the baseline cell is re-measured as part of the Phase 5 matrix run.
+- Corpus is still a single document, so coverage breadth is bounded by that paper.
+
+**Verification**
+All 35 items validated programmatically: every gold span occurs verbatim in the
+source (whitespace-normalized), all unanswerable items carry zero spans, ids unique,
+no answerable question maps to zero relevant chunks. The design goal was met
+measurably — see [FINDINGS.md](FINDINGS.md) F2.

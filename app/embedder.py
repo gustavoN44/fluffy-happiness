@@ -12,6 +12,7 @@ the database, or retrieval.
 from openai import OpenAI
 
 from app.config import settings
+from app.metering import record_usage
 
 # The embeddings endpoint accepts many inputs per request; cap batch size so a
 # large document is sent in a few calls rather than one oversized request.
@@ -46,6 +47,9 @@ class OpenAIEmbedder:
         for start in range(0, len(texts), _BATCH_SIZE):
             batch = texts[start : start + _BATCH_SIZE]
             response = self._client.embeddings.create(model=self.model, input=batch)
+            # Real usage from the API response (metering is a no-op if unmetered).
+            if getattr(response, "usage", None) is not None:
+                record_usage(self.model, response.usage.total_tokens)
             # Sort by .index so order is guaranteed regardless of response ordering.
             for item in sorted(response.data, key=lambda d: d.index):
                 vectors.append(item.embedding)

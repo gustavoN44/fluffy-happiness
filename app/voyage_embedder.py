@@ -14,6 +14,7 @@ from the OpenAI embedder:
 import voyageai
 
 from app.config import settings
+from app.metering import record_usage
 
 _BATCH_SIZE = 100
 
@@ -42,6 +43,8 @@ class VoyageEmbedder:
                 input_type=input_type,
                 output_dimension=self.dim,
             )
+            if getattr(result, "total_tokens", None) is not None:
+                record_usage(self.model, result.total_tokens)
             vectors.extend(result.embeddings)
 
         for i, vector in enumerate(vectors):

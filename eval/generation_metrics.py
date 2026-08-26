@@ -25,6 +25,7 @@ from pathlib import Path
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from ragas import EvaluationDataset, SingleTurnSample, evaluate
+from ragas import RunConfig as RagasRunConfig
 from ragas.embeddings import LangchainEmbeddingsWrapper
 from ragas.llms import LangchainLLMWrapper
 from ragas.metrics import (
@@ -36,6 +37,7 @@ from ragas.metrics import (
 
 from app.config import settings
 from app.generator import generate_answer
+from app.metering import meter
 from app.pipeline import BASELINE, RunConfig
 from app.retriever import retrieve
 
@@ -44,6 +46,11 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 DATASET_PATH = Path("eval/dataset.json")
 RESULTS_DIR = Path("eval/results")
 JUDGE_MODEL = "gpt-4o-mini"  # LLM-as-judge; cheap, keeps repeated eval runs affordable
+
+# RAGAS defaults to max_workers=16, which saturates the API during long back-to-back
+# runs (the Phase 5 matrix) and produced 150 TimeoutErrors -> None metrics. Fewer
+# concurrent judge calls plus a longer timeout trades a little speed for reliability.
+_RAGAS_RUN_CONFIG = RagasRunConfig(timeout=300, max_workers=4, max_retries=10)
 
 # RAGAS metric column name -> our clean output name
 _METRIC_NAMES = {
@@ -62,11 +69,38 @@ def _is_refusal(answer: str) -> bool:
     return "i don't know" in answer.lower()
 
 
-def _run_pipeline(question: str, config: RunConfig) -> tuple[str, list[str]]:
-    """Run the real pipeline under `config`; return (answer, retrieved context texts)."""
-    chunks = retrieve(question, config=config, k=config.retrieval_k)
-    answer = generate_answer(question, chunks)
-    return answer, [c.content for c in chunks]
+def _run_pipeline(question: str, config: RunConfig) -> tuple[str, list[str], dict]:
+    """Run the real pipeline under `config`, metered. Returns
+    (answer, retrieved context texts, meter summary for this one query)."""
+    with meter() as m:
+        chunks = retrieve(question, config=config, k=config.retrieval_k)
+        answer = generate_answer(question, chunks)
+    return answer, [c.content for c in chunks], m.summary()
+
+
+def _aggregate_meters(summaries: list[dict]) -> dict:
+    """Per-query averages of cost, tokens, and phase latency across all queries."""
+    n = len(summaries)
+    if not n:
+        return {}
+    phases = {p for s in summaries for p in s["seconds"]}
+    models = {mo for s in summaries for mo in s["tokens"]}
+    return {
+        "num_queries": n,
+        "avg_cost_usd": round(sum(s["cost_usd"] for s in summaries) / n, 8),
+        "avg_tokens": round(sum(s["total_tokens"] for s in summaries) / n, 1),
+        "avg_tokens_by_model": {
+            mo: round(sum(
+                s["tokens"].get(mo, {}).get("input", 0) + s["tokens"].get(mo, {}).get("output", 0)
+                for s in summaries) / n, 1)
+            for mo in sorted(models)
+        },
+        "avg_seconds": {
+            p: round(sum(s["seconds"].get(p, 0.0) for s in summaries) / n, 4)
+            for p in sorted(phases)
+        },
+        "avg_total_seconds": round(sum(s["total_seconds"] for s in summaries) / n, 4),
+    }
 
 
 def _judge():
@@ -85,8 +119,10 @@ def run(config: RunConfig = BASELINE) -> dict:
 
     # --- answerable: RAGAS four metrics on the live pipeline output ---
     samples, generated = [], []
+    meters: list[dict] = []
     for item in answerable:
-        answer, contexts = _run_pipeline(item["question"], config)
+        answer, contexts, usage = _run_pipeline(item["question"], config)
+        meters.append(usage)
         generated.append({"id": item["id"], "answer": answer, "contexts": contexts})
         samples.append(SingleTurnSample(
             user_input=item["question"],
@@ -100,7 +136,7 @@ def run(config: RunConfig = BASELINE) -> dict:
         EvaluationDataset(samples=samples),
         metrics=[Faithfulness(), ResponseRelevancy(),
                  LLMContextPrecisionWithReference(), LLMContextRecall()],
-        llm=llm, embeddings=emb,
+        llm=llm, embeddings=emb, run_config=_RAGAS_RUN_CONFIG,
     )
     df = result.to_pandas()
 
@@ -123,7 +159,8 @@ def run(config: RunConfig = BASELINE) -> dict:
     # --- unanswerable: refusal-accuracy ---
     refusals = []
     for item in unanswerable:
-        answer, _ = _run_pipeline(item["question"], config)
+        answer, _, usage = _run_pipeline(item["question"], config)
+        meters.append(usage)
         correct = _is_refusal(answer)
         refusals.append({"id": item["id"], "answer": answer, "correct_abstention": correct})
     refusal_accuracy = (round(sum(r["correct_abstention"] for r in refusals) / len(refusals), 4)
@@ -150,6 +187,7 @@ def run(config: RunConfig = BASELINE) -> dict:
             "context_recall": _mean("context_recall"),
             "refusal_accuracy": refusal_accuracy,
         },
+        "cost_latency": _aggregate_meters(meters),
         "per_query": per_query,
         "refusals": refusals,
     }

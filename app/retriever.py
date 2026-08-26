@@ -16,6 +16,7 @@ from psycopg import sql
 
 from app.db import config_table, connect
 from app.lexical import keyword_search
+from app.metering import timed
 from app.pipeline import BASELINE, RunConfig
 from app.rbac import User, where_clause
 
@@ -35,10 +36,11 @@ class RetrievedChunk:
 
 
 def _dense_retrieve(query: str, config: RunConfig, k: int, user: User | None = None) -> list[RetrievedChunk]:
-    query_vector = Vector(config.build_embedder().embed_text(query))
+    with timed("query_embed"):
+        query_vector = Vector(config.build_embedder().embed_text(query))
     tbl = config_table(config.config_id)
     where, acl_params = where_clause(user)  # RBAC filter (empty when user is None)
-    with connect() as conn, conn.cursor() as cur:
+    with timed("search"), connect() as conn, conn.cursor() as cur:
         cur.execute(
             sql.SQL(
                 "SELECT content,"
@@ -61,26 +63,31 @@ def _hybrid_retrieve(query: str, config: RunConfig, k: int, user: User | None = 
     """Fuse dense and BM25 rankings via RRF: each chunk scores Σ 1/(_RRF_K + rank)
     over the two lists, so a chunk ranked highly by either (or both) rises. The
     RBAC filter is applied inside both sub-retrievers."""
+    # _dense_retrieve times query_embed + its own vector search; the lexical pass
+    # and fusion add to the same "search" phase (record_time sums per phase).
     dense = _dense_retrieve(query, config, _CANDIDATES, user)
-    lexical = keyword_search(query, config, _CANDIDATES, user)
 
-    fused: dict[tuple[str, int], dict] = {}
-    for rank, r in enumerate(dense, start=1):
-        e = fused.setdefault(
-            (r.source, r.chunk_index),
-            {"content": r.content, "source": r.source, "chunk_index": r.chunk_index,
-             "score": 0.0, "distance": r.distance, "similarity": r.similarity},
-        )
-        e["score"] += 1.0 / (_RRF_K + rank)
-    for rank, h in enumerate(lexical, start=1):
-        e = fused.setdefault(
-            (h.source, h.chunk_index),
-            {"content": h.content, "source": h.source, "chunk_index": h.chunk_index,
-             "score": 0.0, "distance": None, "similarity": None},
-        )
-        e["score"] += 1.0 / (_RRF_K + rank)
+    with timed("search"):
+        lexical = keyword_search(query, config, _CANDIDATES, user)
 
-    ranked = sorted(fused.values(), key=lambda e: e["score"], reverse=True)[:k]
+        fused: dict[tuple[str, int], dict] = {}
+        for rank, r in enumerate(dense, start=1):
+            e = fused.setdefault(
+                (r.source, r.chunk_index),
+                {"content": r.content, "source": r.source, "chunk_index": r.chunk_index,
+                 "score": 0.0, "distance": r.distance, "similarity": r.similarity},
+            )
+            e["score"] += 1.0 / (_RRF_K + rank)
+        for rank, h in enumerate(lexical, start=1):
+            e = fused.setdefault(
+                (h.source, h.chunk_index),
+                {"content": h.content, "source": h.source, "chunk_index": h.chunk_index,
+                 "score": 0.0, "distance": None, "similarity": None},
+            )
+            e["score"] += 1.0 / (_RRF_K + rank)
+
+        ranked = sorted(fused.values(), key=lambda e: e["score"], reverse=True)[:k]
+
     return [RetrievedChunk(**e) for e in ranked]
 
 
