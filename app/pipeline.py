@@ -96,3 +96,30 @@ PRODUCTION = RunConfig(
     embedder_params={"model": "voyage-4-large", "dim": 1024},
     retrieval_mode="hybrid",
 )
+
+
+# Named configs addressable from the command line, so scripts and CI can target the
+# served config by name instead of hardcoding BASELINE. Keeping this next to the
+# definitions means a new named config is reachable everywhere the moment it exists.
+NAMED_CONFIGS: dict[str, RunConfig] = {
+    "baseline": BASELINE,
+    "production": PRODUCTION,
+}
+
+
+def resolve_config(name: str) -> RunConfig:
+    """Look up a named config, failing with the valid options rather than a KeyError."""
+    try:
+        return NAMED_CONFIGS[name]
+    except KeyError:
+        raise SystemExit(
+            f"unknown config {name!r}; choose one of: {', '.join(NAMED_CONFIGS)}"
+        ) from None
+
+
+def add_config_arg(parser) -> None:
+    """Attach a --config flag to an argparse parser (shared by the CLI entrypoints)."""
+    parser.add_argument(
+        "--config", default="baseline", choices=sorted(NAMED_CONFIGS),
+        help="named pipeline config to use (default: baseline)",
+    )

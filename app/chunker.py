@@ -14,6 +14,8 @@ fact straddling a boundary survives in retrieval. Counted in *tokens* (tiktoken)
 because cost and the embedding model's limits are denominated in tokens.
 """
 
+from itertools import pairwise
+
 import tiktoken
 
 from app.interfaces import Chunk  # shared type; re-exported for existing importers
@@ -138,7 +140,7 @@ class RecursiveChunker:
         if not base:
             return []
         result = [base[0]]
-        for prev, curr in zip(base, base[1:]):
+        for prev, curr in pairwise(base):
             seed = _tail_tokens(prev, self.overlap)
             result.append((seed + " " + curr).strip())
         return result

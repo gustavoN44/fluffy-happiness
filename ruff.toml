@@ -1,0 +1,21 @@
+# Explicit lint configuration so local and CI agree. Without this file, ruff applies
+# whatever its installed version defaults to, and a version bump in CI silently
+# changes what counts as a lint failure.
+
+line-length = 120
+target-version = "py312"
+
+[lint]
+# Deliberately a focused set: real bugs and import hygiene, not style opinions.
+#   E,W  pycodestyle    F  pyflakes (undefined names, unused imports)
+#   I    import sorting B  bugbear (mutable defaults, shadowed loop vars)
+#   UP   pyupgrade      C4 comprehension misuse
+select = ["E", "W", "F", "I", "B", "UP", "C4"]
+
+[lint.per-file-ignores]
+# Tests deliberately import names purely to assert they exist / satisfy a Protocol.
+"tests/*" = ["F401"]
+# The matrix CELLS mapping is written as an aligned table on purpose: one row per
+# experiment cell, so the six configurations can be compared by reading down a column.
+# Wrapping it would obscure the one thing it exists to make obvious.
+"eval/matrix.py" = ["E501"]

@@ -64,7 +64,7 @@ def keyword_search(
     bm25 = BM25Okapi(corpus)
     scores = bm25.get_scores(_tokenize(query))
 
-    ranked = sorted(zip(rows, scores), key=lambda rs: rs[1], reverse=True)[:k]
+    ranked = sorted(zip(rows, scores, strict=True), key=lambda rs: rs[1], reverse=True)[:k]
     return [
         LexicalHit(content=content, source=source, chunk_index=idx, bm25_score=float(score))
         for (content, source, idx), score in ranked

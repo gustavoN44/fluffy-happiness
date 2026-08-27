@@ -1,0 +1,9 @@
+.venv
+.venv-eval
+.git
+frontend
+eval/results
+__pycache__
+**/__pycache__
+*.pyc
+.env

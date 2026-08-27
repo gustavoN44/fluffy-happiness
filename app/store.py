@@ -43,7 +43,7 @@ def store_chunks(
             m["allowed_roles"] = allowed_roles
         return m
 
-    rows = [(c.text, v, Json(_meta(c))) for c, v in zip(chunks, vectors)]
+    rows = [(c.text, v, Json(_meta(c))) for c, v in zip(chunks, vectors, strict=True)]
 
     with conn.cursor() as cur:
         cur.execute(
@@ -82,11 +82,19 @@ def ingest_document(
 
 
 if __name__ == "__main__":
-    import sys
+    import argparse
 
-    if len(sys.argv) != 2:
-        sys.exit("usage: python -m app.store <path-to-document>")
+    from app.pipeline import add_config_arg, resolve_config
 
-    deleted, inserted = ingest_document(sys.argv[1])
-    print(f"ingested {sys.argv[1]} into config {BASELINE.label} ({BASELINE.config_id}): "
-          f"deleted {deleted} old row(s), inserted {inserted}")
+    ap = argparse.ArgumentParser(description="Ingest a document into a config's table.")
+    ap.add_argument("path", help="path to the document")
+    add_config_arg(ap)
+    ap.add_argument("--roles", default="public",
+                    help="comma-separated roles allowed to retrieve this document")
+    args = ap.parse_args()
+
+    cfg = resolve_config(args.config)
+    roles = [r.strip() for r in args.roles.split(",") if r.strip()]
+    deleted, inserted = ingest_document(args.path, cfg, allowed_roles=roles)
+    print(f"ingested {args.path} into config {cfg.label} ({cfg.config_id}) "
+          f"for roles {roles}: deleted {deleted} old row(s), inserted {inserted}")

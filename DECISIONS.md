@@ -711,3 +711,81 @@ dense, preserving it as the fixed comparison point.
 `python -m tests.test_rbac` passes for `BASELINE` and `PRODUCTION`, dense and hybrid —
 10 assertions, including the generator refusing to leak to a public user. The live API
 was queried over HTTP under the new config and returned a grounded answer with sources.
+
+---
+
+## D11 — CI runs unit tests only; evaluation is manual and reports without failing
+
+- **Date:** 2026-08-27
+- **Status:** Accepted; the user chose both halves explicitly after being shown the trade-off.
+- **ROADMAP reference:** Phase 6 — "Wire the evaluation suite into GitHub Actions so a regression fails CI", exit criterion "CI runs tests plus evaluation on every push" ([ROADMAP.md](ROADMAP.md) lines 48–52).
+- **Type:** **Deviation** from the roadmap's stated exit criterion.
+- **Implemented in:** [.github/workflows/ci.yml](.github/workflows/ci.yml), [.github/workflows/evaluation.yml](.github/workflows/evaluation.yml), [tests/test_units.py](tests/test_units.py), [ruff.toml](ruff.toml).
+
+**Context**
+Taken literally, the roadmap asks for the full evaluation suite on every push, failing
+the build on regression. Three facts make that a bad gate in practice:
+
+1. **Cost and flakiness.** One generation-metrics run is ~350 OpenAI requests. During
+   Phase 5 the daily quota was exhausted **twice**, killing runs mid-flight. A gate
+   that goes red because of a rate limit rather than a code change teaches everyone to
+   ignore the gate — which is worse than not having one.
+2. **No zero-cost evaluation tier exists.** Even the "cheap, deterministic" IR metrics
+   embed 35 queries, so they need a paid API key and a live Postgres. There is no
+   evaluation subset that runs for free.
+3. **Repository secrets are unavailable to pull requests from forks**, by GitHub's
+   design. Any API-dependent job is structurally red on outside contributions.
+
+**Decision**
+1. **`ci.yml` on every push and PR:** ruff lint, 36 unit tests, and a Docker build of
+   both images. No API key, no database, no network calls to a paid provider.
+2. **`evaluation.yml` on `workflow_dispatch` + a weekly schedule:** spins up Postgres,
+   ingests, and runs the metrics **against `--config production`** — the configuration
+   the API actually serves, not `BASELINE`.
+3. **The evaluation workflow reports; it never fails the build.** Results go to the
+   GitHub run summary and are uploaded as an artifact.
+4. **A real unit-test suite was written to make (1) possible** — none existed before,
+   since `tests/test_rbac.py` needs live API and DB access.
+
+**Why**
+- *Splitting the gates:* the push gate should answer "did this change break the code?"
+  — a question answerable deterministically and for free. "Did this change degrade
+  retrieval quality?" is a different question with a different cadence and a real
+  bill; conflating them makes the fast gate slow and the slow gate noisy.
+- *Reporting rather than failing:* a numeric threshold was considered and rejected.
+  With 35 questions, differences between good configurations are **not statistically
+  separable** ([FINDINGS.md](FINDINGS.md) F6) — McNemar *p* = 1.000 between the winner
+  and its runner-up. A floor set inside that noise band would fail on sampling
+  variation, and a floor set outside it would not catch anything a human wouldn't
+  already notice. Reporting the numbers where a human reads them is the honest option
+  until the dataset is large enough for a threshold to mean something.
+- *Testing `production`, not `baseline`:* watching the wrong configuration is worse
+  than watching nothing, because it produces the appearance of coverage.
+- *Committing [ruff.toml](ruff.toml):* without a checked-in lint config, ruff applies
+  whatever its installed version defaults to, so CI and local disagree and a version
+  bump silently changes what fails. Found while wiring this up.
+
+**Tradeoffs**
+- **The roadmap's exit criterion is not met as written.** CI does not run evaluation on
+  every push, and no regression fails the build. A quality regression reaches `main`
+  and is caught at the next manual or weekly run. This is the cost of the decision and
+  is stated rather than papered over.
+- **The weekly schedule spends money unattended.** Modest (~$0.02/run for retrieval
+  only), but it is a recurring charge with no human watching.
+- **Unit tests cover logic, not behaviour.** They cannot catch a regression that only
+  shows up as worse retrieval — which is precisely the failure mode this project
+  exists to measure. The suite guards the two places bugs actually appeared (chunker
+  seams, `config_id`), not answer quality.
+
+**Verification**
+`ruff check app eval tests` clean; `pytest tests/test_units.py` — 36 passed in 0.51s
+with no API key and no database. `docker compose up -d` brings up db + api + web, all
+healthy; a query issued through the frontend's nginx proxy returned a grounded answer,
+and the role switch was confirmed end-to-end (public refused, admin answered).
+
+**Side effect worth knowing**
+Wiring the lint config surfaced six `zip()` calls without `strict=`. Two were latent
+correctness risks, not style: `store.py` zips chunks with their vectors (a length
+mismatch would silently drop chunks), and the three `cosine()` helpers zip two vectors
+(a 1536-vs-1024 mismatch would score over the shorter prefix instead of erroring).
+All are now `strict=True`; the genuinely-unequal pairwise loops use `itertools.pairwise`.

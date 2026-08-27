@@ -21,5 +21,41 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build: .
+    container_name: rag-eval-api
+    restart: unless-stopped
+    environment:
+      # DATABASE_URL in .env points at localhost, which is correct when running the
+      # app on the host. Inside the compose network the database is reachable by
+      # service name instead, so it is overridden here rather than edited in .env —
+      # both ways of running the app then work from the same file.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-rag}:${POSTGRES_PASSWORD:-rag}@db:5432/${POSTGRES_DB:-rag}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?set OPENAI_API_KEY in .env}
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY:-}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        # Not merely "started": Settings validates at import time and the first query
+        # hits the DB immediately, so starting before Postgres accepts connections
+        # produces a confusing crash loop.
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  web:
+    build: ./frontend
+    container_name: rag-eval-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    depends_on:
+      - api
+
 volumes:
   pgdata:

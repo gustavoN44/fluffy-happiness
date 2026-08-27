@@ -18,7 +18,6 @@ venv):  .venv-eval/bin/python -m eval.generation_metrics
 """
 
 import json
-import re
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -214,7 +213,13 @@ def _print_summary(results: dict) -> None:
 
 
 if __name__ == "__main__":
-    results = run()
+    import argparse
+
+    from app.pipeline import add_config_arg, resolve_config
+
+    ap = argparse.ArgumentParser(description="Generation (LLM-judge) metrics.")
+    add_config_arg(ap)
+    results = run(resolve_config(ap.parse_args().config))
     path = _save(results)
     _print_summary(results)
     print(f"  saved: {path}")

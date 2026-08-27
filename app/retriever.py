@@ -69,25 +69,38 @@ def _hybrid_retrieve(query: str, config: RunConfig, k: int, user: User | None = 
 
     with timed("search"):
         lexical = keyword_search(query, config, _CANDIDATES, user)
+        ranked = rrf_fuse(dense, lexical, k)
 
-        fused: dict[tuple[str, int], dict] = {}
-        for rank, r in enumerate(dense, start=1):
-            e = fused.setdefault(
-                (r.source, r.chunk_index),
-                {"content": r.content, "source": r.source, "chunk_index": r.chunk_index,
-                 "score": 0.0, "distance": r.distance, "similarity": r.similarity},
-            )
-            e["score"] += 1.0 / (_RRF_K + rank)
-        for rank, h in enumerate(lexical, start=1):
-            e = fused.setdefault(
-                (h.source, h.chunk_index),
-                {"content": h.content, "source": h.source, "chunk_index": h.chunk_index,
-                 "score": 0.0, "distance": None, "similarity": None},
-            )
-            e["score"] += 1.0 / (_RRF_K + rank)
+    return ranked
 
-        ranked = sorted(fused.values(), key=lambda e: e["score"], reverse=True)[:k]
 
+def rrf_fuse(dense: list, lexical: list, k: int) -> list[RetrievedChunk]:
+    """Reciprocal Rank Fusion of two ranked lists: score = Σ 1/(_RRF_K + rank).
+
+    Pure and side-effect free (no DB, no API) so the fusion maths is unit-testable
+    on its own. Only rank position matters — the two retrievers' raw scores are on
+    incomparable scales (cosine distance vs BM25), which is the whole reason RRF is
+    used instead of a weighted score blend. Dense-only fields (distance/similarity)
+    are carried through when the dense list supplied the entry, and left None when a
+    chunk was contributed only by the lexical side.
+    """
+    fused: dict[tuple[str, int], dict] = {}
+    for rank, r in enumerate(dense, start=1):
+        e = fused.setdefault(
+            (r.source, r.chunk_index),
+            {"content": r.content, "source": r.source, "chunk_index": r.chunk_index,
+             "score": 0.0, "distance": r.distance, "similarity": r.similarity},
+        )
+        e["score"] += 1.0 / (_RRF_K + rank)
+    for rank, h in enumerate(lexical, start=1):
+        e = fused.setdefault(
+            (h.source, h.chunk_index),
+            {"content": h.content, "source": h.source, "chunk_index": h.chunk_index,
+             "score": 0.0, "distance": None, "similarity": None},
+        )
+        e["score"] += 1.0 / (_RRF_K + rank)
+
+    ranked = sorted(fused.values(), key=lambda e: e["score"], reverse=True)[:k]
     return [RetrievedChunk(**e) for e in ranked]
 
 

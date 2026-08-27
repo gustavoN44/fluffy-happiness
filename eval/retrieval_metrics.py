@@ -160,12 +160,18 @@ def _print_summary(results: dict) -> None:
     print("  per-query first-relevant rank:")
     for q in results["per_query"]:
         rr = q["reciprocal_rank"]
-        rank = f"rank {round(1/rr)}" if rr else "not in top-%d" % MRR_DEPTH
+        rank = f"rank {round(1/rr)}" if rr else f"not in top-{MRR_DEPTH}"
         print(f"    {q['id']} [{q['category']:<9}] relevant={q['num_relevant']}  {rank}")
 
 
 if __name__ == "__main__":
-    results = run()
+    import argparse
+
+    from app.pipeline import add_config_arg, resolve_config
+
+    ap = argparse.ArgumentParser(description="Retrieval (IR) metrics.")
+    add_config_arg(ap)
+    results = run(resolve_config(ap.parse_args().config))
     path = _save(results)
     _print_summary(results)
     print(f"  saved: {path}")

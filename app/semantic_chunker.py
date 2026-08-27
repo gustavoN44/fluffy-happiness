@@ -24,7 +24,7 @@ _SENTENCE_RE = re.compile(r"(?<=[.!?])\s+")
 
 
 def _cosine_distance(a: list[float], b: list[float]) -> float:
-    dot = sum(x * y for x, y in zip(a, b))
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
     na = math.sqrt(sum(x * x for x in a))
     nb = math.sqrt(sum(y * y for y in b))
     return 1.0 - dot / (na * nb) if na and nb else 1.0
