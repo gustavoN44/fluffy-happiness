@@ -1,0 +1,77 @@
+{
+  "name": "r256-voyage",
+  "label": "recursive256__voyage-4-large",
+  "config_id": "41024635fe",
+  "chunker": "recursive",
+  "chunker_params": {
+    "chunk_size": 256
+  },
+  "embedder": "voyage",
+  "embedder_params": {
+    "model": "voyage-4-large",
+    "dim": 1024
+  },
+  "retrieval_mode": "dense",
+  "retrieval_k": 5,
+  "ingest": {
+    "chunks": 63,
+    "tokens": 15322,
+    "cost_usd": 0.00183864,
+    "seconds": 1.377
+  },
+  "retrieval": {
+    "num_queries": 30,
+    "precision_at_k": {
+      "1": 0.9,
+      "3": 0.3667,
+      "5": 0.2333
+    },
+    "recall_at_k": {
+      "1": 0.8111,
+      "3": 0.9222,
+      "5": 0.9667
+    },
+    "mrr": 0.925
+  },
+  "generation": {
+    "num_runs": 3,
+    "mean": {
+      "faithfulness": 0.901,
+      "answer_relevancy": 0.8409,
+      "context_precision": 0.9292,
+      "context_recall": 0.9667,
+      "refusal_accuracy": 1.0
+    },
+    "min": {
+      "faithfulness": 0.8989,
+      "answer_relevancy": 0.8374,
+      "context_precision": 0.9218,
+      "context_recall": 0.9667,
+      "refusal_accuracy": 1.0
+    },
+    "max": {
+      "faithfulness": 0.9044,
+      "answer_relevancy": 0.8432,
+      "context_precision": 0.9385,
+      "context_recall": 0.9667,
+      "refusal_accuracy": 1.0
+    },
+    "contributing_runs": {
+      "faithfulness": 3,
+      "answer_relevancy": 3,
+      "context_precision": 3,
+      "context_recall": 3,
+      "refusal_accuracy": 3
+    }
+  },
+  "cost_latency": {
+    "avg_cost_usd": 0.00021371,
+    "avg_tokens": 1358.3,
+    "avg_seconds": {
+      "generation": 0.8794,
+      "query_embed": 0.1851,
+      "search": 0.0253
+    },
+    "avg_total_seconds": 1.0898
+  }
+}

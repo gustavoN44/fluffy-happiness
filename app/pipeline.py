@@ -73,4 +73,26 @@ class RunConfig:
 
 
 # The Phase 1 baseline expressed as a config: recursive 512/15%, 3-small, K=5.
+# Deliberately left as the RunConfig defaults even after the Phase 5 matrix picked a
+# different winner: BASELINE means "what we measure against", and re-pointing it would
+# silently invalidate every stored result and comparison that cites it.
 BASELINE = RunConfig()
+
+# Phase 5 matrix winner, and what the API actually serves. Beat the baseline on all
+# three dimensions at once: +0.102 composite quality (+12.6%), 42% lower cost per
+# query, 17% lower latency. See DECISIONS.md D9 for the scoring rule and FINDINGS.md
+# F3/F4 for why this pairing wins — and F6 for the honest limits of that claim
+# (it is not statistically separable from the other two Voyage cells).
+#
+# retrieval_mode="hybrid" comes from the Phase 5 stretch comparison (D10): it wins on
+# all nine measured metrics over its dense twin, drives Recall@5 to 1.000, and costs
+# +$0.000003 per query with no latency penalty. Because retrieval_mode is excluded
+# from config_id (D6), this reads the SAME table the dense config populated — the
+# switch needs no re-ingest.
+PRODUCTION = RunConfig(
+    chunker="recursive",
+    chunker_params={"chunk_size": 256},
+    embedder="voyage",
+    embedder_params={"model": "voyage-4-large", "dim": 1024},
+    retrieval_mode="hybrid",
+)

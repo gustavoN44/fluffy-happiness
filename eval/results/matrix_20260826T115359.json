@@ -1,0 +1,488 @@
+{
+  "run": {
+    "timestamp": "2026-08-26T11:53:59",
+    "finished": "2026-08-26T12:35:54",
+    "type": "matrix"
+  },
+  "config": {
+    "corpus": "data/mota-origenes.pdf",
+    "dataset": "eval/dataset.json",
+    "generation_model": "gpt-4o-mini",
+    "judge_model": "gpt-4o-mini",
+    "gen_runs_per_cell": 3,
+    "cells": [
+      "r512-small",
+      "r256-small",
+      "sem-small",
+      "r512-voyage",
+      "r256-voyage",
+      "sem-voyage"
+    ]
+  },
+  "cells": [
+    {
+      "name": "r512-small",
+      "label": "recursive512__text-embedding-3-small",
+      "config_id": "33fd8fca2f",
+      "chunker": "recursive",
+      "chunker_params": {
+        "chunk_size": 512
+      },
+      "embedder": "openai",
+      "embedder_params": {
+        "model": "text-embedding-3-small",
+        "dim": 1536
+      },
+      "retrieval_mode": "dense",
+      "retrieval_k": 5,
+      "ingest": {
+        "chunks": 34,
+        "tokens": 14204,
+        "cost_usd": 0.00028408,
+        "seconds": 1.804
+      },
+      "retrieval": {
+        "num_queries": 30,
+        "precision_at_k": {
+          "1": 0.7,
+          "3": 0.3444,
+          "5": 0.22
+        },
+        "recall_at_k": {
+          "1": 0.6111,
+          "3": 0.8556,
+          "5": 0.8833
+        },
+        "mrr": 0.7889
+      },
+      "generation": {
+        "num_runs": 2,
+        "mean": {
+          "faithfulness": 0.8556,
+          "answer_relevancy": 0.8056,
+          "context_precision": 0.8248,
+          "context_recall": 0.9333,
+          "refusal_accuracy": 1.0
+        },
+        "min": {
+          "faithfulness": 0.8556,
+          "answer_relevancy": 0.7981,
+          "context_precision": 0.8159,
+          "context_recall": 0.9333,
+          "refusal_accuracy": 1.0
+        },
+        "max": {
+          "faithfulness": 0.8556,
+          "answer_relevancy": 0.8132,
+          "context_precision": 0.8337,
+          "context_recall": 0.9333,
+          "refusal_accuracy": 1.0
+        },
+        "contributing_runs": {
+          "faithfulness": 2,
+          "answer_relevancy": 2,
+          "context_precision": 2,
+          "context_recall": 2,
+          "refusal_accuracy": 2
+        }
+      },
+      "cost_latency": {
+        "avg_cost_usd": 0.00036848,
+        "avg_tokens": 2402.7,
+        "avg_seconds": {
+          "generation": 5.2607,
+          "query_embed": 0.3917,
+          "search": 0.025
+        },
+        "avg_total_seconds": 5.6775
+      }
+    },
+    {
+      "name": "r256-small",
+      "label": "recursive256__text-embedding-3-small",
+      "config_id": "2e381978fc",
+      "chunker": "recursive",
+      "chunker_params": {
+        "chunk_size": 256
+      },
+      "embedder": "openai",
+      "embedder_params": {
+        "model": "text-embedding-3-small",
+        "dim": 1536
+      },
+      "retrieval_mode": "dense",
+      "retrieval_k": 5,
+      "ingest": {
+        "chunks": 63,
+        "tokens": 14093,
+        "cost_usd": 0.00028186,
+        "seconds": 2.194
+      },
+      "retrieval": {
+        "num_queries": 30,
+        "precision_at_k": {
+          "1": 0.5667,
+          "3": 0.3444,
+          "5": 0.2067
+        },
+        "recall_at_k": {
+          "1": 0.4944,
+          "3": 0.85,
+          "5": 0.85
+        },
+        "mrr": 0.7
+      },
+      "generation": {
+        "num_runs": 3,
+        "mean": {
+          "faithfulness": 0.837,
+          "answer_relevancy": 0.7724,
+          "context_precision": 0.7919,
+          "context_recall": 0.9,
+          "refusal_accuracy": 1.0
+        },
+        "min": {
+          "faithfulness": 0.8167,
+          "answer_relevancy": 0.7677,
+          "context_precision": 0.7839,
+          "context_recall": 0.9,
+          "refusal_accuracy": 1.0
+        },
+        "max": {
+          "faithfulness": 0.85,
+          "answer_relevancy": 0.7802,
+          "context_precision": 0.8013,
+          "context_recall": 0.9,
+          "refusal_accuracy": 1.0
+        },
+        "contributing_runs": {
+          "faithfulness": 3,
+          "answer_relevancy": 3,
+          "context_precision": 3,
+          "context_recall": 3,
+          "refusal_accuracy": 3
+        }
+      },
+      "cost_latency": {
+        "avg_cost_usd": 0.00021583,
+        "avg_tokens": 1385.9,
+        "avg_seconds": {
+          "generation": 0.8612,
+          "query_embed": 0.4046,
+          "search": 0.0248
+        },
+        "avg_total_seconds": 1.2906
+      }
+    },
+    {
+      "name": "sem-small",
+      "label": "semantic__text-embedding-3-small",
+      "config_id": "6f8031542f",
+      "chunker": "semantic",
+      "chunker_params": {
+        "breakpoint_percentile": 95,
+        "max_tokens": 512
+      },
+      "embedder": "openai",
+      "embedder_params": {
+        "model": "text-embedding-3-small",
+        "dim": 1536
+      },
+      "retrieval_mode": "dense",
+      "retrieval_k": 5,
+      "ingest": {
+        "chunks": 31,
+        "tokens": 44864,
+        "cost_usd": 0.00089728,
+        "seconds": 3.899
+      },
+      "retrieval": {
+        "num_queries": 30,
+        "precision_at_k": {
+          "1": 0.7333,
+          "3": 0.3333,
+          "5": 0.2
+        },
+        "recall_at_k": {
+          "1": 0.7,
+          "3": 0.9333,
+          "5": 0.9333
+        },
+        "mrr": 0.8278
+      },
+      "generation": {
+        "num_runs": 3,
+        "mean": {
+          "faithfulness": 0.863,
+          "answer_relevancy": 0.8207,
+          "context_precision": 0.8247,
+          "context_recall": 0.9333,
+          "refusal_accuracy": 1.0
+        },
+        "min": {
+          "faithfulness": 0.8611,
+          "answer_relevancy": 0.8197,
+          "context_precision": 0.8189,
+          "context_recall": 0.9333,
+          "refusal_accuracy": 1.0
+        },
+        "max": {
+          "faithfulness": 0.8667,
+          "answer_relevancy": 0.8212,
+          "context_precision": 0.8309,
+          "context_recall": 0.9333,
+          "refusal_accuracy": 1.0
+        },
+        "contributing_runs": {
+          "faithfulness": 3,
+          "answer_relevancy": 3,
+          "context_precision": 3,
+          "context_recall": 3,
+          "refusal_accuracy": 3
+        }
+      },
+      "cost_latency": {
+        "avg_cost_usd": 0.00035628,
+        "avg_tokens": 2320.4,
+        "avg_seconds": {
+          "generation": 0.9887,
+          "query_embed": 0.3679,
+          "search": 0.0237
+        },
+        "avg_total_seconds": 1.3804
+      }
+    },
+    {
+      "name": "r512-voyage",
+      "label": "recursive512__voyage-4-large",
+      "config_id": "b237d5f1d8",
+      "chunker": "recursive",
+      "chunker_params": {
+        "chunk_size": 512
+      },
+      "embedder": "voyage",
+      "embedder_params": {
+        "model": "voyage-4-large",
+        "dim": 1024
+      },
+      "retrieval_mode": "dense",
+      "retrieval_k": 5,
+      "ingest": {
+        "chunks": 34,
+        "tokens": 15465,
+        "cost_usd": 0.0018558,
+        "seconds": 1.611
+      },
+      "retrieval": {
+        "num_queries": 30,
+        "precision_at_k": {
+          "1": 0.8333,
+          "3": 0.3778,
+          "5": 0.24
+        },
+        "recall_at_k": {
+          "1": 0.7278,
+          "3": 0.9222,
+          "5": 0.95
+        },
+        "mrr": 0.9
+      },
+      "generation": {
+        "num_runs": 3,
+        "mean": {
+          "faithfulness": 0.9093,
+          "answer_relevancy": 0.8866,
+          "context_precision": 0.9258,
+          "context_recall": 0.9667,
+          "refusal_accuracy": 1.0
+        },
+        "min": {
+          "faithfulness": 0.9056,
+          "answer_relevancy": 0.8853,
+          "context_precision": 0.9203,
+          "context_recall": 0.9667,
+          "refusal_accuracy": 1.0
+        },
+        "max": {
+          "faithfulness": 0.9111,
+          "answer_relevancy": 0.8879,
+          "context_precision": 0.9367,
+          "context_recall": 0.9667,
+          "refusal_accuracy": 1.0
+        },
+        "contributing_runs": {
+          "faithfulness": 3,
+          "answer_relevancy": 3,
+          "context_precision": 3,
+          "context_recall": 3,
+          "refusal_accuracy": 3
+        }
+      },
+      "cost_latency": {
+        "avg_cost_usd": 0.00037618,
+        "avg_tokens": 2437.7,
+        "avg_seconds": {
+          "generation": 0.9972,
+          "query_embed": 0.1857,
+          "search": 0.0248
+        },
+        "avg_total_seconds": 1.2077
+      }
+    },
+    {
+      "name": "r256-voyage",
+      "label": "recursive256__voyage-4-large",
+      "config_id": "41024635fe",
+      "chunker": "recursive",
+      "chunker_params": {
+        "chunk_size": 256
+      },
+      "embedder": "voyage",
+      "embedder_params": {
+        "model": "voyage-4-large",
+        "dim": 1024
+      },
+      "retrieval_mode": "dense",
+      "retrieval_k": 5,
+      "ingest": {
+        "chunks": 63,
+        "tokens": 15322,
+        "cost_usd": 0.00183864,
+        "seconds": 1.377
+      },
+      "retrieval": {
+        "num_queries": 30,
+        "precision_at_k": {
+          "1": 0.9,
+          "3": 0.3667,
+          "5": 0.2333
+        },
+        "recall_at_k": {
+          "1": 0.8111,
+          "3": 0.9222,
+          "5": 0.9667
+        },
+        "mrr": 0.925
+      },
+      "generation": {
+        "num_runs": 3,
+        "mean": {
+          "faithfulness": 0.901,
+          "answer_relevancy": 0.8409,
+          "context_precision": 0.9292,
+          "context_recall": 0.9667,
+          "refusal_accuracy": 1.0
+        },
+        "min": {
+          "faithfulness": 0.8989,
+          "answer_relevancy": 0.8374,
+          "context_precision": 0.9218,
+          "context_recall": 0.9667,
+          "refusal_accuracy": 1.0
+        },
+        "max": {
+          "faithfulness": 0.9044,
+          "answer_relevancy": 0.8432,
+          "context_precision": 0.9385,
+          "context_recall": 0.9667,
+          "refusal_accuracy": 1.0
+        },
+        "contributing_runs": {
+          "faithfulness": 3,
+          "answer_relevancy": 3,
+          "context_precision": 3,
+          "context_recall": 3,
+          "refusal_accuracy": 3
+        }
+      },
+      "cost_latency": {
+        "avg_cost_usd": 0.00021371,
+        "avg_tokens": 1358.3,
+        "avg_seconds": {
+          "generation": 0.8794,
+          "query_embed": 0.1851,
+          "search": 0.0253
+        },
+        "avg_total_seconds": 1.0898
+      }
+    },
+    {
+      "name": "sem-voyage",
+      "label": "semantic__voyage-4-large",
+      "config_id": "911af60c31",
+      "chunker": "semantic",
+      "chunker_params": {
+        "breakpoint_percentile": 95,
+        "max_tokens": 512
+      },
+      "embedder": "voyage",
+      "embedder_params": {
+        "model": "voyage-4-large",
+        "dim": 1024
+      },
+      "retrieval_mode": "dense",
+      "retrieval_k": 5,
+      "ingest": {
+        "chunks": 31,
+        "tokens": 45891,
+        "cost_usd": 0.00215272,
+        "seconds": 3.666
+      },
+      "retrieval": {
+        "num_queries": 30,
+        "precision_at_k": {
+          "1": 0.8667,
+          "3": 0.3444,
+          "5": 0.2067
+        },
+        "recall_at_k": {
+          "1": 0.8333,
+          "3": 0.9667,
+          "5": 0.9667
+        },
+        "mrr": 0.9111
+      },
+      "generation": {
+        "num_runs": 3,
+        "mean": {
+          "faithfulness": 0.8962,
+          "answer_relevancy": 0.8441,
+          "context_precision": 0.8962,
+          "context_recall": 0.9667,
+          "refusal_accuracy": 1.0
+        },
+        "min": {
+          "faithfulness": 0.8933,
+          "answer_relevancy": 0.8414,
+          "context_precision": 0.8946,
+          "context_recall": 0.9667,
+          "refusal_accuracy": 1.0
+        },
+        "max": {
+          "faithfulness": 0.9,
+          "answer_relevancy": 0.8461,
+          "context_precision": 0.8992,
+          "context_recall": 0.9667,
+          "refusal_accuracy": 1.0
+        },
+        "contributing_runs": {
+          "faithfulness": 3,
+          "answer_relevancy": 3,
+          "context_precision": 3,
+          "context_recall": 3,
+          "refusal_accuracy": 3
+        }
+      },
+      "cost_latency": {
+        "avg_cost_usd": 0.00035058,
+        "avg_tokens": 2270.0,
+        "avg_seconds": {
+          "generation": 0.9355,
+          "query_embed": 0.1664,
+          "search": 0.0252
+        },
+        "avg_total_seconds": 1.1271
+      }
+    }
+  ]
+}

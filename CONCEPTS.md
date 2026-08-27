@@ -521,6 +521,65 @@ answer the *question*?) can't be computed with a formula, so a language model re
 the answer/context/question and scores them against a rubric. Powerful but noisier
 than a formula — which is why we cross-check against the deterministic IR metrics.
 
+### Vocabulary first: *context* vs *reference*
+
+These two words appear throughout the metric definitions and are the most common
+source of confusion — partly because two metrics are named `context_*` yet cannot
+be computed without the *reference*. They are opposite kinds of thing:
+
+| | what it is | where it comes from | changes per config? |
+|---|---|---|---|
+| **context** (`retrieved_contexts`) | the K chunks the retriever returned | pipeline **output** | **Yes** — it is exactly what the matrix compares |
+| **reference** (`ground_truth_answer`) | the correct answer, written by hand | dataset **input** | **No** — fixed; it is the answer key |
+
+In one line: **context is the evidence the system found; reference is the answer it
+should have produced.**
+
+For `q01` in [eval/dataset.json](eval/dataset.json), the reference is
+`"It was first domesticated in East Asia, in early Neolithic times."` — authored by
+us, identical in every run. The context is whatever pgvector returned *that* run,
+and it differs between `r512-small` and `r256-voyage`. That asymmetry is the point:
+the metrics hold the reference still and let the context vary, so any score
+difference is attributable to the configuration.
+
+**Which metric reads which field** (see the `SingleTurnSample` construction and the
+metric list in [eval/generation_metrics.py](eval/generation_metrics.py)):
+
+| metric | user_input | response | **context** | **reference** |
+|---|---|---|---|---|
+| faithfulness | | ✔ | ✔ | — |
+| answer_relevancy | ✔ | ✔ | | — |
+| context_precision | ✔ | | ✔ | **✔** |
+| context_recall | | | ✔ | **✔** |
+
+The class we instantiate is literally named `LLMContextPrecisionWithReference`.
+RAGAS also ships a reference-free variant that substitutes the generated answer for
+the answer key; we deliberately use the reference-anchored one, so the score is
+measured against ground truth rather than against the system's own output.
+
+**Note the deliberate gap: faithfulness never sees the reference.** It only asks
+whether the answer is supported by the context it was given. The consequence is
+worth stating plainly — a system can score **faithfulness = 1.00 and still be
+completely wrong**, if it faithfully summarises the wrong chunks. Faithfulness
+detects *hallucination*; it cannot detect *bad retrieval*. That gap is precisely
+what the reference-anchored metrics fill, and it is why all four are needed.
+
+That division of labour makes the scores diagnostic — they localise the fault:
+
+- **`context_recall` low** → the **retriever** failed; the evidence never arrived.
+- **`context_recall` high but `faithfulness` low** → the **generator** failed; it
+  had the evidence and invented anyway.
+- **both high but `answer_relevancy` low** → the answer was true and grounded, but
+  **didn't address the question asked**.
+
+**Two ground truths per item, and why.** Each dataset entry carries *both*
+`gold_spans` (verbatim text lifted from the PDF) and `ground_truth_answer` (prose).
+This isn't redundancy: a verbatim span makes a poor model answer (it starts
+mid-sentence), and a prose answer makes an impossible matching target (it never
+appears literally in the document). The deterministic IR metrics need the former,
+the LLM judge needs the latter — each half of the harness requires its own form of
+truth.
+
 ### The four metrics
 
 Each judges a different pairing of {question, retrieved context, answer,
@@ -564,8 +623,9 @@ Notice context precision/recall overlap with the IR Precision@K / Recall@K from 
 previous section — but they are computed **completely differently**: IR uses human
 gold spans and exact set overlap (deterministic); RAGAS uses LLM judgment against
 the reference answer (semantic). They are not redundant — they're a cross-check.
-When they **agree** (baseline: RAGAS context_recall 0.917 vs IR Recall@5 0.875),
-that's real confidence the retrieval signal is trustworthy. When they **diverge**,
+When they **agree** (baseline `r512-small` on the final 35-item matrix: RAGAS
+context_recall 0.933 vs IR Recall@5 0.883), that's real confidence the retrieval
+signal is trustworthy. When they **diverge**,
 it's diagnostic: e.g. the gold span was retrieved (high IR recall) but phrased so
 differently the judge couldn't attribute the reference to it (low RAGAS recall), or
 vice-versa. Getting two methods to corroborate is the whole point of evaluating

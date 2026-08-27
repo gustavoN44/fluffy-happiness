@@ -1,0 +1,96 @@
+{
+  "run": {
+    "timestamp": "2026-08-26T19:30:44",
+    "finished": "2026-08-26T19:38:54",
+    "type": "matrix"
+  },
+  "config": {
+    "corpus": "data/mota-origenes.pdf",
+    "dataset": "eval/dataset.json",
+    "generation_model": "gpt-4o-mini",
+    "judge_model": "gpt-4o-mini",
+    "gen_runs_per_cell": 3,
+    "cells": [
+      "r512-small"
+    ]
+  },
+  "cells": [
+    {
+      "name": "r512-small",
+      "label": "recursive512__text-embedding-3-small",
+      "config_id": "33fd8fca2f",
+      "chunker": "recursive",
+      "chunker_params": {
+        "chunk_size": 512
+      },
+      "embedder": "openai",
+      "embedder_params": {
+        "model": "text-embedding-3-small",
+        "dim": 1536
+      },
+      "retrieval_mode": "dense",
+      "retrieval_k": 5,
+      "ingest": {
+        "chunks": 34,
+        "tokens": 14204,
+        "cost_usd": 0.00028408,
+        "seconds": 2.095
+      },
+      "retrieval": {
+        "num_queries": 30,
+        "precision_at_k": {
+          "1": 0.7,
+          "3": 0.3444,
+          "5": 0.22
+        },
+        "recall_at_k": {
+          "1": 0.6111,
+          "3": 0.8556,
+          "5": 0.8833
+        },
+        "mrr": 0.7889
+      },
+      "generation": {
+        "num_runs": 3,
+        "mean": {
+          "faithfulness": 0.8537,
+          "answer_relevancy": 0.8031,
+          "context_precision": 0.8311,
+          "context_recall": 0.9333,
+          "refusal_accuracy": 1.0
+        },
+        "min": {
+          "faithfulness": 0.8528,
+          "answer_relevancy": 0.7949,
+          "context_precision": 0.8298,
+          "context_recall": 0.9333,
+          "refusal_accuracy": 1.0
+        },
+        "max": {
+          "faithfulness": 0.8556,
+          "answer_relevancy": 0.8166,
+          "context_precision": 0.8337,
+          "context_recall": 0.9333,
+          "refusal_accuracy": 1.0
+        },
+        "contributing_runs": {
+          "faithfulness": 3,
+          "answer_relevancy": 3,
+          "context_precision": 3,
+          "context_recall": 3,
+          "refusal_accuracy": 3
+        }
+      },
+      "cost_latency": {
+        "avg_cost_usd": 0.0003686,
+        "avg_tokens": 2402.9,
+        "avg_seconds": {
+          "generation": 0.9087,
+          "query_embed": 0.3766,
+          "search": 0.0247
+        },
+        "avg_total_seconds": 1.3101
+      }
+    }
+  ]
+}

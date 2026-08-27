@@ -548,3 +548,166 @@ All 35 items validated programmatically: every gold span occurs verbatim in the
 source (whitespace-normalized), all unanswerable items carry zero spans, ids unique,
 no answerable question maps to zero relevant chunks. The design goal was met
 measurably — see [FINDINGS.md](FINDINGS.md) F2.
+
+---
+
+## D9 — Phase 5 scoring rule: 60/40 retrieval-generation, faithfulness-weighted, un-normalized
+
+- **Date:** 2026-08-27
+- **Status:** Accepted; weights chosen by the user and fixed **before** the composite was computed.
+- **ROADMAP reference:** Phase 5 — the experiment matrix and its exit criterion, "a completed results table with a defensible, data-backed choice of configuration" ([ROADMAP.md](ROADMAP.md) lines 42–46). Also serves the standing constraint "optimize for quality per dollar and per second, not raw quality."
+- **Type:** Decision (evaluation methodology).
+- **Implemented in:** [eval/matrix.py](eval/matrix.py) (data source); scoring applied over `eval/results/cells/*.json`.
+
+**Context**
+Six configurations were measured on three dimensions (quality, cost, latency).
+Picking a winner requires collapsing several quality metrics into one comparable
+number, and *every* such collapse embeds a value judgement. The methodological risk
+is choosing weights **after** seeing which configuration they favour. The rule was
+therefore agreed in Phase 5 scoping and the specific weights fixed before computing
+anything.
+
+**Decision**
+1. **60% retrieval / 40% generation.** Retrieval = the deterministic IR metrics
+   (P@1, Recall@5, MRR), equally weighted at 20% of the total each.
+2. **Within generation, faithfulness 70% / answer relevancy 30%** — i.e. 28% and 12%
+   of the total.
+3. **`context_precision` and `context_recall` are excluded from the score** and
+   reported instead as an independent cross-check of the retrieval bucket.
+4. **`refusal_accuracy` is excluded** from the score.
+5. **No normalization.** Metrics enter the weighted average as raw 0–1 values; no
+   min-max rescaling or z-scoring across the six cells.
+6. **Cost and latency stay outside the composite**, reported as explicit
+   quality-per-dollar and quality-per-second ratios, with one-time ingest cost kept
+   separate from recurring per-query cost.
+
+**Why**
+- *Retrieval weighted higher:* it is **deterministic** — zero LLM-judge noise, so the
+  same config always yields the same number — and it is where the configurable
+  machinery actually lives (chunker, embedder, K, retrieval mode). Generation
+  metrics inherit judge variance, and the generation model and prompt are held
+  constant across all six cells, so that half of the score has less to say about the
+  variables under test.
+- *Faithfulness privileged:* recorded honestly as a **value judgement, not a
+  statistical result.** The expectation was that answer relevancy would prove
+  noisier and could be downweighted on those grounds. **Measurement contradicted
+  it** — mean run-to-run spread was 0.0081 for answer relevancy vs 0.0099 for
+  faithfulness, and answer relevancy discriminated better (signal/noise 14.0× vs
+  7.3×). The weighting stands on a different basis: faithfulness measures what this
+  system *promises* — answers anchored to retrieved context — and hallucination is
+  the failure mode the project owner most wants suppressed. It is also the metric the
+  grounding prompt exists to enforce, and the one that matters most alongside RBAC,
+  where a fabricating system can assert content it never retrieved.
+- *Excluding `context_*` from the score:* both metrics judge **retrieval**, not
+  generation — [CONCEPTS.md](CONCEPTS.md) calls them the LLM-judged cousins of
+  Precision@K and Recall@K. Scoring them inside the generation bucket would have
+  given retrieval roughly **80% effective weight** while the stated rule said 60%,
+  silently violating the agreed split. Reporting them as a cross-check preserves the
+  "two independent lenses" value they were adopted for.
+- *Excluding `refusal_accuracy`:* it is **1.000 in all six cells**. A metric constant
+  across every candidate contributes an identical term to every score and cannot
+  change a ranking, whatever weight it carries. It is reported as a floor that all
+  configurations met, not as a selection criterion.
+- *No normalization, chosen over min-max/z-score:* a normalized score is defined
+  **relative to the pool of six** — adding a seventh configuration would change every
+  existing cell's score, and the number stops being interpretable as "quality" in any
+  absolute sense. The raw weighted average stays interpretable and stable as the
+  matrix grows.
+
+**Tradeoffs**
+- **Weights do not equal influence.** In an un-normalized average, a metric's effect
+  on the ranking is *weight × spread across cells*. Faithfulness carries the largest
+  single weight (28%) yet moves the composite less than P@1 does at 20%, because the
+  cells separate by only 0.072 on faithfulness against 0.333 on P@1:
+
+  | metric | weight | range across cells | effective influence |
+  |---|---|---|---|
+  | P@1 | 0.20 | 0.333 | **0.067** |
+  | MRR | 0.20 | 0.225 | 0.045 |
+  | Recall@5 | 0.20 | 0.117 | 0.023 |
+  | faithfulness | 0.28 | 0.072 | 0.020 |
+  | answer relevancy | 0.12 | 0.114 | 0.014 |
+
+  So the composite is dominated by retrieval by more than the nominal 60/40 — a
+  direct consequence of declining to normalize. This is accepted and disclosed rather
+  than corrected, because the alternative costs interpretability (above).
+- **Equal weights within the retrieval bucket are a simplification.** P@1 and MRR are
+  strongly correlated (both reward rank-1 hits), so rank-1 accuracy is effectively
+  counted twice against Recall@5's coverage view.
+- **The composite is a ranking aid, not a measurement.** Only the underlying metrics
+  are measurements; the score is a declared preference applied to them. The full
+  per-metric table is reported alongside it so a reader who rejects these weights can
+  re-rank from the raw numbers.
+
+**Verification**
+A sensitivity sweep across 15 weightings (retrieval 40–80%, faithfulness share
+50–90%) returned **`r256-voyage` as the winner in 14 of 15**. The single exception —
+retrieval 40% *and* no faithfulness privilege — flipped to `r512-voyage` by 0.0017,
+well inside judge noise. The conclusion therefore does not depend on the specific
+weights chosen here, which is the strongest available defence against the charge that
+the rule was fitted to a preferred answer.
+
+---
+
+## D10 — Hybrid retrieval adopted as the production default
+
+- **Date:** 2026-08-27
+- **Status:** Accepted.
+- **ROADMAP reference:** Phase 5 stretch goal — hybrid vs dense on the winning configuration ([ROADMAP.md](ROADMAP.md) lines 42–46). Also completes the Phase 4 hybrid work ([D7](#d7--phase-4-hybrid-retrieval-rank_bm25--reciprocal-rank-fusion-rbac-pending)), which was built and measured but never promoted.
+- **Type:** Decision (configuration), backed by measurement.
+- **Implemented in:** [app/pipeline.py](app/pipeline.py) (`PRODUCTION.retrieval_mode = "hybrid"`), served via [app/main.py](app/main.py); evidence in `eval/results/cells/cell_r256-voyage-hybrid.json`.
+
+**Context**
+D7 built hybrid retrieval (BM25 + RRF) and F2 measured a large gain — **+0.111 MRR**
+— but only against the Phase 1 baseline. Phase 5 then replaced the baseline with a
+much stronger dense retriever (`recursive-256 × voyage-4-large`, P@1 0.900). The open
+question was whether hybrid still earns its place once dense retrieval is good, or
+whether its value was an artefact of a weak baseline. F2's own ceiling-effect
+mechanism predicted the gain should shrink.
+
+**Decision**
+Serve `retrieval_mode="hybrid"` in `PRODUCTION`. `BASELINE` is untouched and remains
+dense, preserving it as the fixed comparison point.
+
+**Why**
+- **It wins on every metric measured — nine for nine.** P@1 0.900→0.933, Recall@5
+  0.967→**1.000**, MRR 0.925→0.957, faithfulness 0.901→0.931, answer relevancy
+  0.841→0.871, context precision 0.929→0.945, context recall 0.967→**1.000**, at
+  equal cost and equal latency. There is no metric on which dense is preferable.
+- **The generation gains clear the noise floor.** Faithfulness +0.031 and answer
+  relevancy +0.030 against run-to-run spreads of 0.003–0.006 — a 5–10× signal-to-noise
+  ratio. Context recall is deterministic across all six runs (spread 0.0000) and
+  reaches exactly 1.000.
+- **Faithfulness improved with no change to the generator or prompt.** Only the
+  retrieved context changed, which isolates the causal path: better context produces
+  better-grounded answers. It is also the metric weighted highest under D9.
+- **Recall@5 = 1.000 changes what failures are possible.** A relevant chunk now
+  reaches the top-5 for all 30 answerable questions, so no remaining error can be
+  attributed to missing evidence.
+- **It is nearly free.** +$0.000003 per query (+1.4%), no additional API calls, and no
+  re-ingest — hybrid reads the same table its dense twin populated, because D6
+  deliberately excluded `retrieval_mode` from `config_id`. Measured end-to-end latency
+  did not increase (1.090s → 1.058s).
+- *Chosen over* keeping dense for simplicity: the only real cost is the BM25 code
+  path, which already exists, is already RBAC-enforced, and is already tested.
+
+**Tradeoffs**
+- **The improvement is not statistically significant.** McNemar on paired hit@1 gives
+  *p* = 1.000 (one discordant question); the bootstrap 95% CI on ΔMRR is
+  [+0.000, +0.073]. The defensible claim is that hybrid **dominates on every metric
+  and never underperforms**, not that its advantage is proven. Adoption rests on the
+  asymmetry — nine-for-nine at near-zero cost — rather than on a p-value. See
+  [FINDINGS.md](FINDINGS.md) F6 and F7.
+- **The gain is much smaller than F2 reported** (+0.032 MRR vs +0.111): 29% of the
+  original effect. This is the predicted ceiling effect, not a contradiction — see F7.
+- **BM25 rebuilds its index per query** from the RBAC-filtered corpus. Fine at 63
+  chunks; it is the first thing that would need caching at a larger corpus size, and
+  `search` latency already doubled (0.025s → 0.051s) even though the absolute cost
+  stayed negligible.
+- **Two retrieval paths to maintain** — both must stay RBAC-correct. Mitigated by the
+  negative test, which exercises dense and hybrid across both configs.
+
+**Verification**
+`python -m tests.test_rbac` passes for `BASELINE` and `PRODUCTION`, dense and hybrid —
+10 assertions, including the generator refusing to leak to a public user. The live API
+was queried over HTTP under the new config and returned a grounded answer with sources.

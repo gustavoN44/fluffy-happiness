@@ -1,0 +1,51 @@
+{
+  "run": {
+    "timestamp": "2026-08-27T11:47:30",
+    "type": "hybrid-vs-dense"
+  },
+  "name": "r256-voyage-hybrid",
+  "label": "recursive256__voyage-4-large",
+  "config_id": "41024635fe",
+  "retrieval_mode": "hybrid",
+  "generation": {
+    "num_runs": 3,
+    "mean": {
+      "faithfulness": 0.9315,
+      "answer_relevancy": 0.8709,
+      "context_precision": 0.9449,
+      "context_recall": 1.0,
+      "refusal_accuracy": 1.0
+    },
+    "min": {
+      "faithfulness": 0.9278,
+      "answer_relevancy": 0.8691,
+      "context_precision": 0.9412,
+      "context_recall": 1.0,
+      "refusal_accuracy": 1.0
+    },
+    "max": {
+      "faithfulness": 0.9333,
+      "answer_relevancy": 0.872,
+      "context_precision": 0.9468,
+      "context_recall": 1.0,
+      "refusal_accuracy": 1.0
+    },
+    "contributing_runs": {
+      "faithfulness": 3,
+      "answer_relevancy": 3,
+      "context_precision": 3,
+      "context_recall": 3,
+      "refusal_accuracy": 3
+    }
+  },
+  "cost_latency": {
+    "avg_cost_usd": 0.00021675,
+    "avg_tokens": 1377.5,
+    "avg_seconds": {
+      "generation": 0.8376,
+      "query_embed": 0.1693,
+      "search": 0.0514
+    },
+    "avg_total_seconds": 1.0583
+  }
+}

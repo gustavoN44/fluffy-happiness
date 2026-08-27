@@ -1,0 +1,77 @@
+{
+  "name": "r256-small",
+  "label": "recursive256__text-embedding-3-small",
+  "config_id": "2e381978fc",
+  "chunker": "recursive",
+  "chunker_params": {
+    "chunk_size": 256
+  },
+  "embedder": "openai",
+  "embedder_params": {
+    "model": "text-embedding-3-small",
+    "dim": 1536
+  },
+  "retrieval_mode": "dense",
+  "retrieval_k": 5,
+  "ingest": {
+    "chunks": 63,
+    "tokens": 14093,
+    "cost_usd": 0.00028186,
+    "seconds": 2.194
+  },
+  "retrieval": {
+    "num_queries": 30,
+    "precision_at_k": {
+      "1": 0.5667,
+      "3": 0.3444,
+      "5": 0.2067
+    },
+    "recall_at_k": {
+      "1": 0.4944,
+      "3": 0.85,
+      "5": 0.85
+    },
+    "mrr": 0.7
+  },
+  "generation": {
+    "num_runs": 3,
+    "mean": {
+      "faithfulness": 0.837,
+      "answer_relevancy": 0.7724,
+      "context_precision": 0.7919,
+      "context_recall": 0.9,
+      "refusal_accuracy": 1.0
+    },
+    "min": {
+      "faithfulness": 0.8167,
+      "answer_relevancy": 0.7677,
+      "context_precision": 0.7839,
+      "context_recall": 0.9,
+      "refusal_accuracy": 1.0
+    },
+    "max": {
+      "faithfulness": 0.85,
+      "answer_relevancy": 0.7802,
+      "context_precision": 0.8013,
+      "context_recall": 0.9,
+      "refusal_accuracy": 1.0
+    },
+    "contributing_runs": {
+      "faithfulness": 3,
+      "answer_relevancy": 3,
+      "context_precision": 3,
+      "context_recall": 3,
+      "refusal_accuracy": 3
+    }
+  },
+  "cost_latency": {
+    "avg_cost_usd": 0.00021583,
+    "avg_tokens": 1385.9,
+    "avg_seconds": {
+      "generation": 0.8612,
+      "query_embed": 0.4046,
+      "search": 0.0248
+    },
+    "avg_total_seconds": 1.2906
+  }
+}

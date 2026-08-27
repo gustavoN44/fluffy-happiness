@@ -9,15 +9,17 @@ from fastapi import FastAPI, Header
 from pydantic import BaseModel, Field
 
 from app.generator import generate_answer
-from app.pipeline import BASELINE
+from app.pipeline import PRODUCTION
 from app.rbac import User
 from app.retriever import DEFAULT_K, retrieve
 
 app = FastAPI(title="RAG Evaluation System", version="0.1.0")
 
-# The API serves a single "active" config. Phase 3 keeps this the baseline;
-# matrix configs are eval-time targets, not served over HTTP.
-ACTIVE_CONFIG = BASELINE
+# The API serves a single "active" config. Phase 5 promoted this from BASELINE to the
+# matrix winner (recursive-256 x voyage-4-large) — the point of the whole exercise was
+# that the served config is chosen by measurement, not by whatever was built first.
+# Swapping it is a one-line change because Phase 3 made configs interchangeable.
+ACTIVE_CONFIG = PRODUCTION
 
 
 class QueryRequest(BaseModel):
