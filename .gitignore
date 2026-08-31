@@ -1,13 +1,23 @@
 # Local secrets / config
 .env
 
+# Personal working notes — the public-facing version lives in README.md
+DEV_INSTRUCTIONS.md
+
 # Python
 __pycache__/
 *.py[cod]
 .venv/
+.venv-eval/
 venv/
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
+
+# Node / frontend build
+node_modules/
+frontend/dist/
+*.local
 
 # OS
 .DS_Store
