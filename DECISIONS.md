@@ -739,7 +739,7 @@ the build on regression. Three facts make that a bad gate in practice:
 **Decision**
 1. **`ci.yml` on every push and PR:** ruff lint, 36 unit tests, and a Docker build of
    both images. No API key, no database, no network calls to a paid provider.
-2. **`evaluation.yml` on `workflow_dispatch` + a weekly schedule:** spins up Postgres,
+2. **`evaluation.yml` on `workflow_dispatch` only:** spins up Postgres,
    ingests, and runs the metrics **against `--config production`** — the configuration
    the API actually serves, not `BASELINE`.
 3. **The evaluation workflow reports; it never fails the build.** Results go to the
@@ -768,10 +768,10 @@ the build on regression. Three facts make that a bad gate in practice:
 **Tradeoffs**
 - **The roadmap's exit criterion is not met as written.** CI does not run evaluation on
   every push, and no regression fails the build. A quality regression reaches `main`
-  and is caught at the next manual or weekly run. This is the cost of the decision and
-  is stated rather than papered over.
-- **The weekly schedule spends money unattended.** Modest (~$0.02/run for retrieval
-  only), but it is a recurring charge with no human watching.
+  and is caught at the next manual run — which only happens if someone remembers to
+  trigger it. This is the cost of the decision and is stated rather than papered over.
+- **Nothing runs the evaluation automatically.** A weekly `schedule:` was written and
+  then removed (see the amendment below), so the harness only runs when a human asks.
 - **Unit tests cover logic, not behaviour.** They cannot catch a regression that only
   shows up as worse retrieval — which is precisely the failure mode this project
   exists to measure. The suite guards the two places bugs actually appeared (chunker
@@ -782,6 +782,27 @@ the build on regression. Three facts make that a bad gate in practice:
 with no API key and no database. `docker compose up -d` brings up db + api + web, all
 healthy; a query issued through the frontend's nginx proxy returned a grounded answer,
 and the role switch was confirmed end-to-end (public refused, admin answered).
+
+**Amendment (2026-08-30): the weekly schedule was removed**
+The workflow originally also carried `schedule: cron "0 6 * * 1"` (Mondays 06:00 UTC).
+It was dropped, and the reasoning is worth recording because it inverts the usual
+instinct that more automated monitoring is strictly better:
+
+- **GitHub disables scheduled workflows in public repositories after ~60 days without
+  commit activity.** That is precisely the resting state of a finished portfolio
+  project — so the schedule would have switched itself off at exactly the moment its
+  stated purpose (catching drift in the third-party models we call) began to matter.
+- **It spent money unattended** (~$0.002/run) to produce a report **nobody reads**,
+  since the job reports without failing and nothing surfaces the result.
+- A job that bills quietly, is never read, and silently stops is **worse than no job**:
+  it advertises monitoring that is not happening.
+
+`workflow_dispatch` remains, and is the half of D11 that carries the actual value —
+re-measuring on demand after a change. Two further defects were fixed at the same time:
+a fork guard (`if: github.repository_owner != ''`) that was dead code, since that value
+is never empty, and a bare `apt-get install` with no preceding `apt-get update`, which
+fails on a runner with a stale package index — now guarded by a `command -v psql` check,
+since the runner image ships psql already.
 
 **Side effect worth knowing**
 Wiring the lint config surfaced six `zip()` calls without `strict=`. Two were latent

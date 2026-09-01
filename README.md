@@ -378,15 +378,20 @@ every push, failing the build on regression. It doesn't, deliberately
 - **Every push** runs lint, 36 unit tests, and a Docker build of both images — no API
   key, no database, ~seconds. This works on pull requests from forks, where repository
   secrets are unavailable by design.
-- **Evaluation runs on demand and weekly**, against the *served* configuration, and
-  **reports without failing**. A full generation run is ~350 API requests and exhausted
+- **Evaluation runs on demand**, against the *served* configuration, and **reports
+  without failing**. A full generation run is ~350 API requests and exhausted
   the daily quota twice during Phase 5; a gate that goes red from a rate limit rather
   than a code change teaches people to ignore the gate. And a numeric threshold would
   be dishonest at this sample size — F6 shows good configurations aren't statistically
   separable here, so a floor would mostly encode noise.
 
-The cost is real and worth stating: a quality regression can reach `main` and will be
-caught at the next manual or weekly run, not at the pull request.
+A weekly scheduled run was written and then deliberately removed: GitHub disables
+scheduled workflows in public repos after ~60 days of commit inactivity — the normal
+resting state of a finished project — so it would have switched itself off exactly when
+it started to matter, after quietly billing for reports nobody read.
+
+The cost is real and worth stating: a quality regression can reach `main` and is caught
+only when someone triggers the evaluation by hand.
 
 **Deliberately out of scope:** reranking as a second retrieval stage, contextual/late
 chunking, multi-tenancy, and continuous evaluation on live query logs.

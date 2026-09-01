@@ -10,6 +10,14 @@ name: Evaluation
 # 35 questions, differences between good configurations are not statistically
 # separable (FINDINGS.md F6), so a numeric floor would mostly encode noise. The job
 # writes results to the run summary for a human to read.
+#
+# On-demand ONLY, with no cron schedule. A weekly run was written and then removed:
+# GitHub disables scheduled workflows in public repos after ~60 days without commit
+# activity, which is the normal resting state of a finished project — so the schedule
+# would have switched itself off at exactly the point its stated purpose (catching
+# drift in the models we call) started to matter. Unattended spend producing a report
+# nobody reads, that silently stops, is worse than no schedule: it implies monitoring
+# that is not happening.
 
 on:
   workflow_dispatch:
@@ -18,16 +26,13 @@ on:
         description: "Also run the RAGAS generation metrics (slow, billed)"
         type: boolean
         default: false
-  schedule:
-    # Weekly, Mondays 06:00 UTC — enough to catch drift in the models we call.
-    - cron: "0 6 * * 1"
 
 jobs:
   evaluate:
     name: Retrieval metrics${{ inputs.generation && ' + generation' || '' }}
     runs-on: ubuntu-latest
-    # Secrets are unavailable to fork PRs; this workflow is never triggered by them.
-    if: github.repository_owner != ''
+    # No fork guard is needed: workflow_dispatch can only be triggered by someone with
+    # write access to THIS repository, so a fork can never reach the secrets below.
 
     services:
       db:
@@ -63,7 +68,13 @@ jobs:
         # The db/init scripts only run on a fresh volume for the local compose setup;
         # the CI service container needs them applied explicitly.
         run: |
-          sudo apt-get install -y --no-install-recommends postgresql-client
+          # psql is preinstalled on the ubuntu runner image. Only fetch it if that
+          # ever stops being true — and update the package index first, since a stale
+          # one makes a bare `apt-get install` fail.
+          command -v psql >/dev/null || {
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends postgresql-client
+          }
           for f in db/init/*.sql; do PGPASSWORD=rag psql -h localhost -U rag -d rag -f "$f"; done
 
       - name: Ingest corpus

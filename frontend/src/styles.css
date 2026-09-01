@@ -9,6 +9,10 @@
   --warn: #8a6d1f;
   --warn-soft: #fdf8e8;
   --radius: 10px;
+  /* One fixed colour per pipeline phase, reused by the bar and its legend. */
+  --ph-embed: #6b8f71;
+  --ph-search: #c9a227;
+  --ph-generate: #b4552d;
   color-scheme: light dark;
 }
 
@@ -23,6 +27,9 @@
     --accent-soft: #2a2019;
     --warn: #d9bd6d;
     --warn-soft: #262117;
+    --ph-embed: #8fbb96;
+    --ph-search: #e0c558;
+    --ph-generate: #e0855c;
   }
 }
 
@@ -230,4 +237,85 @@ section h2 {
   font-size: 0.88rem;
   color: var(--muted);
   white-space: pre-wrap;
+}
+
+
+/* ---- measured cost & latency ---------------------------------------------- */
+
+.metrics {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.metric-row { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 14px; }
+.metric { display: flex; flex-direction: column; }
+.metric strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.metric em {
+  font-style: normal;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Segment widths are proportional to measured seconds, so the bar answers
+   "where did the time go?" without the reader doing arithmetic. */
+.latency-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--line);
+}
+.seg { display: block; height: 100%; }
+.seg-query_embed { background: var(--ph-embed); }
+.seg-search { background: var(--ph-search); }
+.seg-generation { background: var(--ph-generate); }
+
+.phase-legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 10px 0 0;
+  padding: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.phase-legend li { display: flex; align-items: center; gap: 6px; }
+.phase-legend strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  font-weight: 500;
+}
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+.metrics-note {
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+/* Marks an example that only returns an answer for a privileged role, so a refusal
+   reads as access control working rather than as a failure. */
+.needs-role {
+  margin-left: 6px;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--warn);
+  border: 1px solid var(--warn);
+  border-radius: 3px;
+  padding: 0 4px;
 }
